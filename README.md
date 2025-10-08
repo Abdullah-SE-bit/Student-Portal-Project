@@ -27,7 +27,7 @@ It demonstrates Scrum-based development, incremental sprints, and core portal fe
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/YOUR-USERNAME/student-portal.git
+   git clone https://github.com/Abdullah-SE-bit/Demo-Student-Portal-Project.git
    cd student-portal
    ```
 
