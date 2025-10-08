@@ -22,6 +22,12 @@ It demonstrates Scrum-based development, incremental sprints, and core portal fe
 * SQLite (database)
 * HTML / CSS (frontend templates)
 
+## Contributors
+
+* M. Abdullah Adnan (Product Owner)
+* Taha Sohail (Scrum Master)
+* M. Shaheer (Developer)
+
 ## How to Run Locally
 
 1. **Clone the repository**
@@ -70,9 +76,3 @@ student_portal/
 ├── static/          # CSS and assets
 │   └── style.css
 ```
-
-## Contributors
-
-* M. Abdullah Adnan (Product Owner)
-* Taha Sohail (Scrum Master)
-* M. Shaheer (Developer)
