@@ -8,7 +8,7 @@ It demonstrates Scrum-based development, incremental sprints, and core portal fe
 ## Features
 
 * All the functationality of a student portal (marks, attendances, academic record, course regestration etc)
-* Functionality of mailing / messgaing faculty and academics ( Gmail functionality merged in to it)
+* Functionality of mailing / messgaing faculty and academics ( student mail functionality merged in to it)
 * Functionality of google classroom
 * Datesheets, Time table, Schedules etc
 
