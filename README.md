@@ -1,4 +1,4 @@
-# Student Portal (Flask + SQLite)
+# Student Portal Project
 
 ## Overview
 
