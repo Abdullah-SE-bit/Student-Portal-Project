@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is a simple **Student Portal** built with **Python (Flask)** and **SQLite** as part of our Software Engineering course.
+This is a simple **Student Portal** built with **MERN STACK** as part of our Software Engineering course.
 It demonstrates Scrum-based development, incremental sprints, and core portal features.
 
 ## Features
