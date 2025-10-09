@@ -7,23 +7,20 @@ It demonstrates Scrum-based development, incremental sprints, and core portal fe
 
 ## Features
 
-* Student Attendance Management
-
-  * Teacher can add attendance (Present / Late / Absent)
-  * Students can view attendance records
-* SQLite Database to store records
-* Flask backend with HTML/CSS frontend templates
-* Ready to extend with Marks, Courses, and Announcements
+* All the functationality of a student portal (marks, attendances, academic record, course regestration etc)
+* Functionality of mailing / messgaing faculty and academics ( Gmail functionality merged in to it)
+* Functionality of google classroom
+* Datesheets, Time table, Schedules etc
 
 ## Tech Stack
 
-* Python 3.x
-* Flask (web framework)
-* SQLite (database)
-* HTML / CSS (frontend templates)
+* MongoDB (Database)
+* Express.js (Web framework)
+* React.js (Frontend)
+* Node.js (Runtime environment)
 
 ## Contributors
 
 * M. Abdullah Adnan (Product Owner)
-* Taha Sohail (Scrum Master)
-* M. Shaheer (Developer)
+* M. Shaheer (Scrum Master)
+* Taha Sohail (Developer)
