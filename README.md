@@ -1,8 +1,8 @@
-# Student Portal Project
+# **FLAKE**
 
 ## Overview
 
-This is a simple **Student Portal** named as **FLAKE** and built with **MERN Stack**.
+This is a simple **Student Portal** named as **FLAKE**, built with **MERN Stack**.
 It demonstrates Scrum-based development, incremental sprints, and core portal features.
 
 ## Features
