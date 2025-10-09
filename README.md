@@ -1,4 +1,4 @@
-# **FLAKE**
+# **FLAKE- All In One Student Portal**
 
 ## Overview
 
