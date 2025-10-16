@@ -1,0 +1,151 @@
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background-color: #E4EBEB;
+      color: #333;
+    }
+
+    header {
+      background-color: #124DB5;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 40px;
+      color: white;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+      position: relative;
+    }
+
+    .left-btn, .options-btn {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 24px;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      position: relative;
+    }
+
+    .dropdown {
+      display: none;
+      position: absolute;
+      top: 60px;
+      right: 0;
+      background-color: #ffffff;
+      color: #000;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      width: 180px;
+      overflow: hidden;
+      z-index: 10;
+    }
+
+    .dropdown a {
+      display: block;
+      padding: 12px 16px;
+      text-decoration: none;
+      color: #124DB5;
+      font-weight: 500;
+      transition: background 0.3s;
+    }
+
+    .dropdown a:hover {
+      background-color: #f0f0f0;
+    }
+
+    main {
+      padding: 40px;
+      text-align: center;
+    }
+
+    /* ----- SIDE PANEL (LEFT MENU) ----- */
+    .side-panel {
+        height: 100%;
+        width: 0;
+        position: fixed;
+        z-index: 10;
+        top: 0;
+        left: 0;
+        background-color: #124DB5;
+        overflow-x: hidden;
+        transition: 0.4s;
+        padding-top: 60px;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .side-panel a {
+        padding: 15px 25px;
+        text-decoration: none;
+        font-size: 18px;
+        color: white;
+        display: block;
+        transition: 0.3s;
+    }
+
+    .side-panel a:hover {
+        background-color: rgba(255, 255, 255, 0.2);
+        padding-left: 35px;
+    }
+
+    /* When open */
+    .side-panel.open {
+        width: 250px;
+    }
+
+    .side-panel a i {
+        margin-right: 10px;
+        width: 20px;
+    }
+
+    /* --- Additional styles for inside toggle button --- */
+    .side-panel .inside-btn {
+      align-self: flex-start;
+      margin: 10px 0 20px 15px;
+      background: none;
+      border: none;
+      color: white;
+      font-size: 24px;
+      cursor: pointer;
+    }
+
+    /* Ensure smooth open/close */
+    .side-panel {
+      transition: left 0.3s ease, width 0.4s ease;
+    }
+
+    /* Make sure icons align properly */
+    .side-panel a {
+      display: flex;
+      align-items: center;
+    }
+
+    .side-panel a i {
+      margin-right: 10px;
+      width: 20px;
+    }
+
+      .inside-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: none;
+      border: none;
+      color: white;
+      font-size: 26px;
+      cursor: pointer;
+    }
+
+    .inside-btn:hover {
+      color: #ddd;
+    }
+
+    .dropdown a i {
+      margin-right: 8px;
+      width: 18px;
+    }

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='portal_template.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <title>Teacher Dashboard</title>
+  </head>
+
+  <body>
+    <header>
+      <button class="left-btn" id="menuToggle">&#9776;</button>
+
+      <div class="user-info">
+        <span>{{ user }}</span>
+        <button class="options-btn" id="optionsToggle">&#8942;</button>
+        <div class="dropdown" id="optionsMenu">
+          <a href="#"><i class="fa-solid fa-pen-to-square"></i> Change Password</a>
+          <a href="{{ url_for('logout') }}"><i class="fa-solid fa-power-off"></i> Logout</a>
+        </div>
+      </div>
+    </header>
+
+    <!-- Side Navigation Panel -->
+    <div class="side-panel" id="sidePanel">
+      <button class="left-btn inside-btn" id="closePanel">&#9776;</button>
+      <button class="inside-btn" id="insideMenuToggle">&#9776;</button>
+      
+      <a href="#"><i class="fa-solid fa-inbox"></i> Inbox</a>
+      <a href="#"><i class="fa-solid fa-book-open"></i> Course List</a>
+      <a href="#"><i class="fa-solid fa-users"></i> Student List</a>
+      <a href="#"><i class="fa-solid fa-bullhorn"></i> Announcements</a>
+      <a href="#"><i class="fa-solid fa-clipboard-check"></i> Attendance</a>
+      <a href="#"><i class="fa-solid fa-graduation-cap"></i> Marks</a>
+      <a href="#"><i class="fa-solid fa-calendar-days"></i> Timetable</a>
+    </div>
+
+    <main>
+      <h1>Welcome, {{ user }}</h1>
+      <p>This is the <b>Teacher Dashboard</b>.</p>
+    </main>
+
+    <script>
+      // Dropdown toggle
+      const optionsToggle = document.getElementById('optionsToggle');
+      const optionsMenu = document.getElementById('optionsMenu');
+
+      optionsToggle.addEventListener('click', () => {
+        optionsMenu.style.display =
+          optionsMenu.style.display === 'block' ? 'none' : 'block';
+      });
+
+      window.addEventListener('click', (e) => {
+        if (!optionsToggle.contains(e.target) && !optionsMenu.contains(e.target)) {
+          optionsMenu.style.display = 'none';
+        }
+      });
+
+      // Side panel toggle
+      const menuToggle = document.getElementById('menuToggle');
+      const insideMenuToggle = document.getElementById('insideMenuToggle');
+      const sidePanel = document.getElementById('sidePanel');
+      const closePanel = document.getElementById('closePanel');
+
+      function toggleSidePanel() {
+        sidePanel.classList.toggle('open');
+      }
+
+      menuToggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleSidePanel();
+      });
+
+      insideMenuToggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleSidePanel();
+      });
+
+      closePanel.addEventListener('click', (e) => {
+        e.stopPropagation();
+        sidePanel.classList.remove('open');
+      });
+
+      window.addEventListener('click', (e) => {
+        if (!sidePanel.contains(e.target) && !menuToggle.contains(e.target)) {
+          sidePanel.classList.remove('open');
+        }
+      });
+    </script>
+  </body>
+</html>
