@@ -1,0 +1,12 @@
+{% extends "student_base.html" %}
+
+{% block title %}Attendance - Student Dashboard{% endblock %}
+
+{% block content %}
+  <h1>Attendance</h1>
+  <p>Here is your attendance record for this semester.</p>
+  <!-- You can put tables, charts, etc. here -->
+{% endblock %}
+
+
+in the extended files
