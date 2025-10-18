@@ -13,6 +13,8 @@
     <header>
       <button class="left-btn" id="menuToggle">&#9776;</button>
 
+      <h1 class="portal-title"><b>Admin Portal</b></h1>
+
       <div class="user-info">
         <span>{{ user }}</span>
         <button class="options-btn" id="optionsToggle">&#8942;</button>
@@ -37,8 +39,9 @@
     </div>
 
     <main>
-      <h1>Welcome, {{ user }}</h1>
-      <p>This is the <b>Admin Dashboard</b>.</p>
+      {% block content %}
+      <!-- Future teacher dashboard pages will extend this block -->
+      {% endblock %}
     </main>
 
     <script>

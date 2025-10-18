@@ -1,0 +1,104 @@
+{% extends "teacher_dashboard.html" %}
+
+{% block title %}Teacher Home{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/home_T.css') }}">
+
+<div class="container">
+  <h1 class="main-heading">Teacher Information</h1>
+
+  <!-- ===== University Information ===== -->
+  <h2 class="section-heading">University Information</h2>
+  <table class="info-table">
+    <tr>
+      <th>Teacher ID</th>
+      <td>{{ teacher['Teacher_ID'] }}</td>
+    </tr>
+    <tr>
+      <th>Name</th>
+      <td>{{ teacher['Name'] }}</td>
+    </tr>
+    <tr>
+      <th>Gender</th>
+      <td>{{ teacher['Gender'] }}</td>
+    </tr>
+    <tr>
+      <th>Department</th>
+      <td>{{ department }}</td>
+    </tr>
+    <tr>
+      <th>Domain</th>
+      <td>{{ domain }}</td>
+    </tr>
+    <tr>
+      <th>Courses Taught</th>
+      <td>
+        {% if courses %}
+          <ul>
+            {% for course in courses %}
+              <li>{{ course }}</li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          No courses assigned.
+        {% endif %}
+      </td>
+    </tr>
+    <tr>
+      <th>Status</th>
+      <td>Current</td>
+    </tr>
+  </table>
+
+  <!-- ===== Personal Information ===== -->
+  <h2 class="section-heading">Personal Information</h2>
+  <table class="info-table">
+    <tr>
+      <th>Name</th>
+      <td>{{ teacher['Name'] }}</td>
+    </tr>
+    <tr>
+      <th>Gender</th>
+      <td>{{ teacher['Gender'] }}</td>
+    </tr>
+    <tr>
+      <th>Date of Birth</th>
+      <td>{{ teacher['DOB'] }}</td>
+    </tr>
+    <tr>
+      <th>CNIC</th>
+      <td>{{ teacher['CNIC'] }}</td>
+    </tr>
+    <tr>
+      <th>Email</th>
+      <td>{{ teacher['Email'] }}</td>
+    </tr>
+    <tr>
+      <th>Mobile No</th>
+      <td>{{ teacher['Mobile_No'] }}</td>
+    </tr>
+  </table>
+
+  <!-- ===== Contact Information ===== -->
+  <h2 class="section-heading">Contact Information</h2>
+  <table class="info-table">
+    <tr>
+      <th>Current Address</th>
+      <td>{{ teacher['Current_Address'] }}</td>
+    </tr>
+    <tr>
+      <th>Permanent Address</th>
+      <td>{{ teacher['Permanent_Address'] }}</td>
+    </tr>
+    <tr>
+      <th>Home Phone</th>
+      <td>{{ teacher['Home_Phone'] }}</td>
+    </tr>
+    <tr>
+      <th>Postal Code</th>
+      <td>{{ teacher['Postal_Code'] }}</td>
+    </tr>
+  </table>
+</div>
+{% endblock %}

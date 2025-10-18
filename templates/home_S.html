@@ -1,0 +1,94 @@
+{% extends "student_dashboard.html" %}
+
+{% block title %}student Home{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/home_T.css') }}">
+
+<div class="container">
+  <h1 class="main-heading">Student Information</h1>
+
+  <!-- ===== University Information ===== -->
+  <h2 class="section-heading">University Information</h2>
+  <table class="info-table">
+    <tr>
+      <th>Roll No</th>
+      <td>{{ student['Roll_No'] }}</td>
+    </tr>
+    <tr>
+      <th>Name</th>
+      <td>{{ student['Name'] }}</td>
+    </tr>
+    <tr>
+      <th>Gender</th>
+      <td>{{ student['Gender'] }}</td>
+    </tr>
+    <tr>
+      <th>Batch</th>
+      <td>{{ batch }}</td>
+    </tr>
+    <tr>
+      <th>Degree</th>
+      <td>{{ degree_name }}</td>
+    </tr>
+    <tr>
+      <th>Section</th>
+      <td>{{ section }}</td>
+    </tr>
+    <tr>
+      <th>Status</th>
+      <td>Current</td>
+    </tr>
+  </table>
+
+  <!-- ===== Personal Information ===== -->
+  <h2 class="section-heading">Personal Information</h2>
+  <table class="info-table">
+    <tr>
+      <th>Name</th>
+      <td>{{ student['Name'] }}</td>
+    </tr>
+    <tr>
+      <th>Gender</th>
+      <td>{{ student['Gender'] }}</td>
+    </tr>
+    <tr>
+      <th>Date of Birth</th>
+      <td>{{ student['DOB'] }}</td>
+    </tr>
+    <tr>
+      <th>CNIC</th>
+      <td>{{ student['CNIC'] }}</td>
+    </tr>
+    <tr>
+      <th>Email</th>
+      <td>{{ student['Email'] }}</td>
+    </tr>
+    <tr>
+      <th>Mobile No</th>
+      <td>{{ student['Mobile_No'] }}</td>
+    </tr>
+  </table>
+
+  <!-- ===== Contact Information ===== -->
+  <h2 class="section-heading">Contact Information</h2>
+  <table class="info-table">
+    <tr>
+      <th>Current Address</th>
+      <td>{{ student['Current_Address'] }}</td>
+    </tr>
+    <tr>
+      <th>Permanent Address</th>
+      <td>{{ student['Permanent_Address'] }}</td>
+    </tr>
+    <tr>
+      <th>Home Phone</th>
+      <td>{{ student['Home_Phone'] }}</td>
+    </tr>
+    <tr>
+      <th>Postal Code</th>
+      <td>{{ student['Postal_Code'] }}</td>
+    </tr>
+  </table>
+</div>
+{% endblock %}

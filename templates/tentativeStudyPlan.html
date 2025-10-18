@@ -1,0 +1,114 @@
+{% extends "student_dashboard.html" %}
+
+{% block title %}Tentative study plan{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/studyPlan.css') }}">
+  <div class="container">
+    <div class="header">
+      <div class="logo">CS</div>
+      <div>
+        <div class="page-title">Courses For Computing Department</div>
+        <div class="subtext">Course Structure by Semester</div>
+      </div>
+    </div>
+
+    <div class="semester-block">
+      <div class="semester-header">
+        <h2>Semester 1</h2>
+      </div>
+      <table>
+        <tr>
+          <th>Course Code</th>
+          <th>Course Name</th>
+          <th>Credit Hours</th>
+          <th>Prerequisite</th>
+        </tr>
+    <tr><td>CS-0001</td><td>Programming Fundamentals</td><td>3</td><td>NILL</td></tr><tr><td>CL-0001</td><td>Programming Fundamentals Lab</td><td>1</td><td>NILL</td></tr><tr><td>SS-0001</td><td>Functional English</td><td>2</td><td>NILL</td></tr><tr><td>MT-0001</td><td>Caluculus</td><td>3</td><td>NILL</td></tr></table></div>
+    <div class="semester-block">
+      <div class="semester-header">
+        <h2>Semester 2</h2>
+      </div>
+      <table>
+        <tr>
+          <th>Course Code</th>
+          <th>Course Name</th>
+          <th>Credit Hours</th>
+          <th>Prerequisite</th>
+        </tr>
+    <tr><td>CS-2001</td><td>OOP</td><td>3</td><td>CS-0001</td></tr><tr><td>CL-2001</td><td>OOP Lab</td><td>1</td><td>CL-0001</td></tr><tr><td>SS-2001</td><td>Islamic Studies</td><td>2</td><td>SS-0001</td></tr><tr><td>MT-2001</td><td>Discrete Structures</td><td>3</td><td>MT-0001</td></tr></table></div>
+    <div class="semester-block">
+      <div class="semester-header">
+        <h2>Semester 3</h2>
+      </div>
+      <table>
+        <tr>
+          <th>Course Code</th>
+          <th>Course Name</th>
+          <th>Credit Hours</th>
+          <th>Prerequisite</th>
+        </tr>
+    <tr><td>CS-3001</td><td>Data Structures</td><td>3</td><td>CS-1001</td></tr><tr><td>CL-3001</td><td>Data Structures Lab</td><td>1</td><td>CL-2001</td></tr><tr><td>SS-3001</td><td>Ideology Of Pakistan</td><td>2</td><td>SS-2001</td></tr><tr><td>MT-3001</td><td>Multi Variable Calculus</td><td>3</td><td>MT-2001</td></tr></table></div>
+    <div class="semester-block">
+      <div class="semester-header">
+        <h2>Semester 4</h2>
+      </div>
+      <table>
+        <tr>
+          <th>Course Code</th>
+          <th>Course Name</th>
+          <th>Credit Hours</th>
+          <th>Prerequisite</th>
+        </tr>
+    <tr><td>CS-4001</td><td>Operating Systems</td><td>3</td><td>CS-3001</td></tr><tr><td>CL-4001</td><td>Operating Systems Lab</td><td>1</td><td>CL-3001</td></tr><tr><td>SS-4001</td><td>Expository Writing</td><td>2</td><td>SS-3001</td></tr><tr><td>MT-4001</td><td>Probability And Statistics</td><td>3</td><td>MT-3001</td></tr></table></div>
+    <div class="semester-block">
+      <div class="semester-header">
+        <h2>Semester 5</h2>
+      </div>
+      <table>
+        <tr>
+          <th>Course Code</th>
+          <th>Course Name</th>
+          <th>Credit Hours</th>
+          <th>Prerequisite</th>
+        </tr>
+    <tr><td>CS-5001</td><td>Algorithms</td><td>3</td><td>CS-4001</td></tr><tr><td>CL-5001</td><td>Algorithms Lab</td><td>1</td><td>CL-4001</td></tr><tr><td>SS-5001</td><td>Civics And Community Engagement</td><td>2</td><td>SS-4001</td></tr><tr><td>MT-5001</td><td>Linear Algebra</td><td>3</td><td>MT-4001</td></tr></table></div>
+    <div class="semester-block">
+      <div class="semester-header">
+        <h2>Semester 6</h2>
+      </div>
+      <table>
+        <tr>
+          <th>Course Code</th>
+          <th>Course Name</th>
+          <th>Credit Hours</th>
+          <th>Prerequisite</th>
+        </tr>
+    <tr><td>CS-6001</td><td>Database</td><td>3</td><td>CS-5001</td></tr><tr><td>CL-6001</td><td>Database Lab</td><td>1</td><td>CL-5001</td></tr><tr><td>SS-6001</td><td>History</td><td>2</td><td>SS-5001</td></tr><tr><td>MT-6001</td><td>Advaces Maths For Engeenring </td><td>3</td><td>MT-5001</td></tr></table></div>
+    <div class="semester-block">
+      <div class="semester-header">
+        <h2>Semester 7</h2>
+      </div>
+      <table>
+        <tr>
+          <th>Course Code</th>
+          <th>Course Name</th>
+          <th>Credit Hours</th>
+          <th>Prerequisite</th>
+        </tr>
+    <tr><td>CS-7001</td><td>FYP-I</td><td>3</td><td>CS-6001</td></tr><tr><td>CS-7003</td><td>ML Ops</td><td>1</td><td>CS-6001</td></tr><tr><td>SS-7001</td><td>Phsycology</td><td>2</td><td>SS-6001</td></tr><tr><td>CS-7005</td><td>Dev Ops</td><td>3</td><td>CS-6001`</td></tr></table></div>
+    <div class="semester-block">
+      <div class="semester-header">
+        <h2>Semester 8</h2>
+      </div>
+      <table>
+        <tr>
+          <th>Course Code</th>
+          <th>Course Name</th>
+          <th>Credit Hours</th>
+          <th>Prerequisite</th>
+        </tr>
+    <tr><td>CS-8000</td><td>FYP-II</td><td>3</td><td>CS-7001</td></tr><tr><td>CS-8001</td><td>Block Chain</td><td>3</td><td>NILL</td></tr><tr><td>CS-8002</td><td>Artificial Intelligence</td><td>3</td><td>CS-7001</td></tr><tr><td>CL-8003</td><td>Artificial Intelligence Lab</td><td>1</td><td>CL-7001</td></tr></table></div>
+    
+  </div>
+{% endblock %}

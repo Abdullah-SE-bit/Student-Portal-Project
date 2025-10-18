@@ -24,15 +24,16 @@
       <!-- Left button (menu) -->
       <button class="left-btn" id="menuToggle">&#9776;</button>
 
+      <h1 class="portal-title"><b>Student Portal</b></h1>
+
       <!-- Right side: user info -->
       <div class="user-info">
-        <span>{{ user }}</span>
+        <span>Welcome, {{ session.get('user_name', 'Student') }}</span>
         <button class="options-btn" id="optionsToggle">&#8942;</button>
-          <div class="dropdown" id="optionsMenu">
-            <a href="#"><i class="fa-solid fa-pen-to-square"></i> Change Password</a>
-            <a href="{{ url_for('logout') }}"><i class="fa-solid fa-power-off"></i> Logout</a>
-          </div>
-
+        <div class="dropdown" id="optionsMenu">
+          <a href="#"><i class="fa-solid fa-pen-to-square"></i> Change Password</a>
+          <a href="{{ url_for('logout') }}"><i class="fa-solid fa-power-off"></i> Logout</a>
+        </div>
       </div>
     </header>
 
@@ -40,7 +41,7 @@
     <div class="side-panel" id="sidePanel">
       <button class="inside-btn" id="insideMenuToggle">&#9776;</button>
 
-      <a href="#"><i class="fa-solid fa-house"></i> Home</a>
+      <a href="{{ url_for('student_home') }}"><i class="fa-solid fa-house"></i> Home</a>
       <a href="#"><i class="fa-solid fa-file-lines"></i> Course Registration</a>
       <a href="#"><i class="fa-solid fa-list-check"></i> Attendance</a>
       <a href="#"><i class="fa-solid fa-list-check"></i> Marks</a>
@@ -50,13 +51,15 @@
       <a href="#"><i class="fa-solid fa-list-check"></i> Feedback</a>
       <a href="#"><i class="fa-solid fa-inbox"></i> Inbox</a>
       <a href="#"><i class="fa-solid fa-bullhorn"></i> Announcements</a>
-      <a href="#"><i class="fa-solid fa-calendar-days"></i> Tentative Study Plan</a>
+      <a href="{{ url_for('student_study_plan') }}"><i class="fa-solid fa-calendar-days"></i> Tentative Study Plan</a>
+
       <a href="#"><i class="fa-solid fa-clock"></i> Timetable</a>
     </div>
 
     <main>
-      <h1>Welcome, {{ user }}</h1>
-      <p>This is the <b>Student Dashboard</b>.</p>
+      {% block content %}
+      <!-- Future teacher dashboard pages will extend this block -->
+      {% endblock %}
     </main>
 
     <!-- ========== JAVASCRIPT ========== -->

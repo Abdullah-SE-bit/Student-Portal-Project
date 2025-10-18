@@ -11,10 +11,15 @@
 
   <body>
     <header>
+      <!-- Left Menu Button -->
       <button class="left-btn" id="menuToggle">&#9776;</button>
 
+      <!-- Center Title -->
+      <h1 class="portal-title"><b>Teacher Portal</b></h1>
+
+      <!-- Right: User Info -->
       <div class="user-info">
-        <span>{{ user }}</span>
+        <span>Welcome, {{ user_name }}</span>
         <button class="options-btn" id="optionsToggle">&#8942;</button>
         <div class="dropdown" id="optionsMenu">
           <a href="#"><i class="fa-solid fa-pen-to-square"></i> Change Password</a>
@@ -23,11 +28,12 @@
       </div>
     </header>
 
-    <!-- Side Navigation Panel -->
+    <!-- Side Navigation -->
     <div class="side-panel" id="sidePanel">
-      <button class="left-btn inside-btn" id="closePanel">&#9776;</button>
       <button class="inside-btn" id="insideMenuToggle">&#9776;</button>
-      
+
+      <a href="{{ url_for('teacher_home') }}"><i class="fa-solid fa-house"></i> Home</a>
+
       <a href="#"><i class="fa-solid fa-inbox"></i> Inbox</a>
       <a href="#"><i class="fa-solid fa-book-open"></i> Course List</a>
       <a href="#"><i class="fa-solid fa-users"></i> Student List</a>
@@ -37,17 +43,20 @@
       <a href="#"><i class="fa-solid fa-calendar-days"></i> Timetable</a>
     </div>
 
+    <!-- Main Body (Extendable Area) -->
     <main>
-      <h1>Welcome, {{ user }}</h1>
-      <p>This is the <b>Teacher Dashboard</b>.</p>
+      {% block content %}
+      {% endblock %}
     </main>
 
+    <!-- JS for dropdown and side panel -->
     <script>
-      // Dropdown toggle
+      // Dropdown Menu
       const optionsToggle = document.getElementById('optionsToggle');
       const optionsMenu = document.getElementById('optionsMenu');
 
-      optionsToggle.addEventListener('click', () => {
+      optionsToggle.addEventListener('click', (e) => {
+        e.stopPropagation();
         optionsMenu.style.display =
           optionsMenu.style.display === 'block' ? 'none' : 'block';
       });
@@ -58,30 +67,18 @@
         }
       });
 
-      // Side panel toggle
+      // Side Panel Toggle
       const menuToggle = document.getElementById('menuToggle');
       const insideMenuToggle = document.getElementById('insideMenuToggle');
       const sidePanel = document.getElementById('sidePanel');
-      const closePanel = document.getElementById('closePanel');
 
-      function toggleSidePanel() {
+      function togglePanel(e) {
+        e.stopPropagation();
         sidePanel.classList.toggle('open');
       }
 
-      menuToggle.addEventListener('click', (e) => {
-        e.stopPropagation();
-        toggleSidePanel();
-      });
-
-      insideMenuToggle.addEventListener('click', (e) => {
-        e.stopPropagation();
-        toggleSidePanel();
-      });
-
-      closePanel.addEventListener('click', (e) => {
-        e.stopPropagation();
-        sidePanel.classList.remove('open');
-      });
+      menuToggle.addEventListener('click', togglePanel);
+      insideMenuToggle.addEventListener('click', togglePanel);
 
       window.addEventListener('click', (e) => {
         if (!sidePanel.contains(e.target) && !menuToggle.contains(e.target)) {
