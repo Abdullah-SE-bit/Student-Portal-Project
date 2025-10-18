@@ -137,7 +137,7 @@ def init_db():
         df = pd.read_excel(os.path.join(data_path, "attendance.xlsx"))
         for _, r in df.iterrows():
             cur.execute("INSERT OR IGNORE INTO attendance VALUES (?, ?, ?, ?, ?, ?)",
-                        (r['Roll_No'], r['Name'], r['Date'], r['Course_Code'], r['Class_No'], r['Attendance']))
+                        (r['Roll_No'], r['Name'], str(r['Date']), r['Course_Code'], r['Class_No'], r['Attendance']))
 
     if os.path.exists(os.path.join(data_path, "marks.xlsx")):
         df = pd.read_excel(os.path.join(data_path, "marks.xlsx"))

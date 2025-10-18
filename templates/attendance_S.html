@@ -1,0 +1,83 @@
+{% extends "student_dashboard.html" %}
+
+{% block title %}Student Attendance{% endblock %}
+
+{% block content %}
+<div class="container">
+
+  <!-- ===== Dynamic Course Buttons Header ===== -->
+  <div class="course-buttons">
+    {% for course in courses %}
+      <button class="course-btn" data-course="{{ course['Course_Name'] }}">{{ course['Course_Name'] }}</button>
+    {% else %}
+      <p>No courses enrolled.</p>
+    {% endfor %}
+  </div>
+
+  <!-- ===== Attendance Tables (one per course) ===== -->
+  <div class="attendance-tables">
+    {% for course in courses %}
+      <div class="attendance-table-container" id="table-{{ course['Course_Name'] | replace(' ', '_') }}">
+        <h2 class="course-title">{{ course['Course_Name'] }}</h2>
+        <table class="attendance-table">
+          <thead>
+            <tr>
+              <th>Sr No</th>
+              <th>Date</th>
+              <th>Attendance</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% set course_attendance = attendance[course['Course_Name']] %}
+            {% if course_attendance %}
+              {% for record in course_attendance %}
+              <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ record['Date'] }}</td>
+                <td>{{ record['Status'] }}</td>
+              </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td colspan="3" style="text-align:center;">No attendance records for this course</td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    {% endfor %}
+  </div>
+
+</div>
+
+<!-- ===== JavaScript to Switch Tables ===== -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const tables = document.querySelectorAll(".attendance-table-container");
+  const buttons = document.querySelectorAll(".course-btn");
+
+  if (tables.length > 0) {
+    // Hide all tables except first
+    tables.forEach((t, i) => t.style.display = i === 0 ? "block" : "none");
+    buttons.forEach((b, i) => {
+      if (i === 0) b.classList.add("active"); // highlight first
+    });
+
+    // Add click listeners to buttons
+    buttons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        const course = btn.dataset.course.replace(/ /g, "_");
+
+        // Hide all tables
+        tables.forEach(t => t.style.display = "none");
+        buttons.forEach(b => b.classList.remove("active"));
+
+        // Show the selected one
+        document.getElementById("table-" + course).style.display = "block";
+        btn.classList.add("active");
+      });
+    });
+  }
+});
+</script>
+{% endblock %}

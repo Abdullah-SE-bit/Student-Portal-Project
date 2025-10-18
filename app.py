@@ -227,7 +227,59 @@ def teacher_home():
         courses=courses
     )
 
+# -------------------- ATTENDENCE ----------------
 
+@app.route('/student_attendance')
+def student_attendance():
+    if 'user' not in session:
+        return redirect(url_for('student_login'))
+
+    roll_no = session['user']
+
+    conn = sqlite3.connect('flake.db')
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+
+    # Step 1: Get all courses the student is enrolled in
+    cur.execute("""
+        SELECT c.Course_Code, c.Course_Name
+        FROM enrollments e
+        JOIN courses c ON e.Course_Code = c.Course_Code
+        WHERE e.Roll_No = ?
+    """, (roll_no,))
+    courses = cur.fetchall()
+
+    # Step 2: Get all attendance records for the student
+    cur.execute("""
+        SELECT Course_Code, Date, Attendance
+        FROM attendance
+        WHERE Roll_No = ?
+        ORDER BY Date
+    """, (roll_no,))
+    attendance_records = cur.fetchall()
+    conn.close()
+
+    # Step 3: Group attendance by course name
+    attendance = {}
+    for record in attendance_records:
+        course_code = record['Course_Code']
+        course_name = next(
+            (c['Course_Name'] for c in courses if c['Course_Code'] == course_code),
+            course_code
+        )
+        if course_name not in attendance:
+            attendance[course_name] = []
+        attendance[course_name].append({
+            'Date': record['Date'],
+            'Attendance': record['Attendance']
+        })
+
+    # Step 4: Pass both courses & grouped attendance to HTML
+    return render_template(
+        'attendance_S.html',
+        courses=courses,
+        attendance=attendance
+    )
 
 
 # ------------------ RUN SERVER ------------------
