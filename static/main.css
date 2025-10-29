@@ -1,49 +1,96 @@
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: Arial, sans-serif;
-    }
+/* ===== Global Reset ===== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Segoe UI", Arial, sans-serif;
+}
 
-    body {
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background-image: url('FAST.jpg'); /* Replace with your image */
-      background-size: cover;
-      background-position: center;
-    }
+/* ===== Background Layout ===== */
+body {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-image: url('FAST.jpg'); /* Replace with your background image */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  position: relative;
+  overflow: hidden;
+}
 
-    .login-box {
-      background-color: #E4EBEB;
-      padding: 40px;
-      border-radius: 20px;
-      text-align: center;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-      width: 300px;
-    }
+/* Optional: subtle overlay for better text contrast */
+body::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.25);
+  z-index: 0;
+}
 
-    h2 {
-      margin-bottom: 30px;
-      color: #333;
-    }
+/* ===== Login Box ===== */
+.login-box {
+  position: relative;
+  z-index: 1;
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 40px 35px;
+  border-radius: 20px;
+  text-align: center;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  width: 320px;
+  backdrop-filter: blur(4px);
+}
 
-    .btn {
-      display: block;
-      width: 100%;
-      margin: 10px 0;
-      padding: 12px;
-      background-color: #124DB5;
-      color: white;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-      font-size: 16px;
-      transition: background-color 0.3s, transform 0.2s;
-    }
+h2 {
+  margin-bottom: 25px;
+  color: #124DB5;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
 
-    .btn:hover {
-      background-color: #0f3d8f;
-      transform: scale(1.05);
-    }
+/* ===== Buttons ===== */
+.btn {
+  display: block;
+  width: 100%;
+  margin: 12px 0;
+  padding: 12px;
+  background-color: #124DB5;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 500;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.btn:hover {
+  background-color: #0f3d8f;
+  transform: translateY(-2px);
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+/* ===== Responsive Design ===== */
+@media (max-width: 600px) {
+  .login-box {
+    width: 85%;
+    padding: 30px 25px;
+  }
+
+  h2 {
+    font-size: 22px;
+  }
+
+  .btn {
+    font-size: 15px;
+    padding: 10px;
+  }
+
+  body::before {
+    background: rgba(0, 0, 0, 0.3);
+  }
+}

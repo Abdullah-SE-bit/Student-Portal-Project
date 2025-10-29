@@ -229,6 +229,8 @@ def teacher_home():
 
 # -------------------- ATTENDENCE ----------------
 
+from datetime import datetime
+
 @app.route('/student_attendance')
 def student_attendance():
     if 'user' not in session:
@@ -249,7 +251,7 @@ def student_attendance():
     """, (roll_no,))
     courses = cur.fetchall()
 
-    # Step 2: Get all attendance records for the student
+    # Step 2: Get attendance records for that student
     cur.execute("""
         SELECT Course_Code, Date, Attendance
         FROM attendance
@@ -259,7 +261,7 @@ def student_attendance():
     attendance_records = cur.fetchall()
     conn.close()
 
-    # Step 3: Group attendance by course name
+    # Step 3: Group attendance by course name and convert to P/A/L
     attendance = {}
     for record in attendance_records:
         course_code = record['Course_Code']
@@ -267,11 +269,31 @@ def student_attendance():
             (c['Course_Name'] for c in courses if c['Course_Code'] == course_code),
             course_code
         )
+
         if course_name not in attendance:
             attendance[course_name] = []
+
+        # Convert full words to single letters
+        status = record['Attendance'].strip().lower()
+        if status in ['present', 'p', '1']:
+            short_status = 'P'
+        elif status in ['absent', 'a', '0']:
+            short_status = 'A'
+        elif status in ['leave', 'l']:
+            short_status = 'L'
+        else:
+            short_status = '-'
+
+        # Format date (remove time)
+        date_value = record['Date']
+        if isinstance(date_value, str):
+            date_value = date_value.split(' ')[0]  # keeps only YYYY-MM-DD
+        elif isinstance(date_value, (datetime,)):
+            date_value = date_value.date().isoformat()
+
         attendance[course_name].append({
-            'Date': record['Date'],
-            'Attendance': record['Attendance']
+            'Date': date_value,
+            'Status': short_status
         })
 
     # Step 4: Pass both courses & grouped attendance to HTML
@@ -280,6 +302,8 @@ def student_attendance():
         courses=courses,
         attendance=attendance
     )
+
+
 
 
 # ------------------ RUN SERVER ------------------

@@ -1,165 +1,157 @@
-    body {
-      margin: 0;
-      font-family: Arial, Helvetica, sans-serif;
-      background-color: #E4EBEB;
-      color: #333;
-    }
+/* =================== BASE STYLES =================== */
+body {
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  background-color: #E4EBEB;
+  color: #333;
+}
 
-    header {
-      background-color: #124DB5;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 15px 40px;
-      color: white;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-      position: relative;
-    }
-
-    .left-btn, .options-btn {
-      background: none;
-      border: none;
-      color: white;
-      font-size: 24px;
-      cursor: pointer;
-      position: relative;
-    }
-
-    .user-info {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-      position: relative;
-    }
-
-    .dropdown {
-      display: none;
-      position: absolute;
-      top: 60px;
-      right: 0;
-      background-color: #ffffff;
-      color: #000;
-      border-radius: 8px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-      width: 180px;
-      overflow: hidden;
-      z-index: 10;
-    }
-
-    .dropdown a {
-      display: block;
-      padding: 12px 16px;
-      text-decoration: none;
-      color: #124DB5;
-      font-weight: 500;
-      transition: background 0.3s;
-    }
-
-    .dropdown a:hover {
-      background-color: #f0f0f0;
-    }
-
-    main {
-      padding: 40px;
-      text-align: center;
-    }
-
-    /* ----- SIDE PANEL (LEFT MENU) ----- */
-    .side-panel {
-        height: 100%;
-        width: 0;
-        position: fixed;
-        z-index: 10;
-        top: 0;
-        left: 0;
-        background-color: #124DB5;
-        overflow-x: hidden;
-        transition: 0.4s;
-        padding-top: 60px;
-        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
-    }
-
-    .side-panel a {
-        padding: 15px 25px;
-        text-decoration: none;
-        font-size: 18px;
-        color: white;
-        display: block;
-        transition: 0.3s;
-    }
-
-    .side-panel a:hover {
-        background-color: rgba(255, 255, 255, 0.2);
-        padding-left: 35px;
-    }
-
-    /* When open */
-    .side-panel.open {
-        width: 250px;
-    }
-
-    .side-panel a i {
-        margin-right: 10px;
-        width: 20px;
-    }
-
-    /* --- Additional styles for inside toggle button --- */
-    .side-panel .inside-btn {
-      align-self: flex-start;
-      margin: 10px 0 20px 15px;
-      background: none;
-      border: none;
-      color: white;
-      font-size: 24px;
-      cursor: pointer;
-    }
-
-    /* Ensure smooth open/close */
-    .side-panel {
-      transition: left 0.3s ease, width 0.4s ease;
-    }
-
-    /* Make sure icons align properly */
-    .side-panel a {
-      display: flex;
-      align-items: center;
-    }
-
-    .side-panel a i {
-      margin-right: 10px;
-      width: 20px;
-    }
-
-      .inside-btn {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: none;
-      border: none;
-      color: white;
-      font-size: 26px;
-      cursor: pointer;
-    }
-
-    .inside-btn:hover {
-      color: #ddd;
-    }
-
-    .dropdown a i {
-      margin-right: 8px;
-      width: 18px;
-    }
-
-    header {
+header {
+  background-color: #124DB5;
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  background-color: #124DB5; /* example dark blue */
+  align-items: center;
+  padding: 15px 40px;
   color: white;
-  padding: 10px 20px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.2);
   position: relative;
 }
 
+.left-btn, .options-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  position: relative;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  position: relative;
+}
+
+.dropdown {
+  display: none;
+  position: absolute;
+  top: 60px;
+  right: 0;
+  background-color: #ffffff;
+  color: #000;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  width: 180px;
+  overflow: hidden;
+  z-index: 10;
+}
+
+.dropdown a {
+  display: block;
+  padding: 12px 16px;
+  text-decoration: none;
+  color: #124DB5;
+  font-weight: 500;
+  transition: background 0.3s;
+}
+
+.dropdown a:hover {
+  background-color: #f0f0f0;
+}
+
+main {
+  padding: 40px;
+  text-align: center;
+}
+
+/* =================== SIDE PANEL =================== */
+.side-panel {
+  height: 100%;
+  width: 0;
+  position: fixed;
+  z-index: 10;
+  top: 0;
+  left: 0;
+  background-color: #124DB5;
+  overflow-x: hidden;
+  transition: 0.4s;
+  padding-top: 60px;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+}
+
+.side-panel a {
+  padding: 15px 25px;
+  text-decoration: none;
+  font-size: 18px;
+  color: white;
+  display: block;
+  transition: 0.3s;
+}
+
+.side-panel a:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  padding-left: 35px;
+}
+
+/* When open */
+.side-panel.open {
+  width: 250px;
+}
+
+.side-panel a i {
+  margin-right: 10px;
+  width: 20px;
+}
+
+/* --- Additional styles for inside toggle button --- */
+.side-panel .inside-btn {
+  align-self: flex-start;
+  margin: 10px 0 20px 15px;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+/* Ensure smooth open/close */
+.side-panel {
+  transition: left 0.3s ease, width 0.4s ease;
+}
+
+/* Make sure icons align properly */
+.side-panel a {
+  display: flex;
+  align-items: center;
+}
+
+.side-panel a i {
+  margin-right: 10px;
+  width: 20px;
+}
+
+.inside-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 26px;
+  cursor: pointer;
+}
+
+.inside-btn:hover {
+  color: #ddd;
+}
+
+.dropdown a i {
+  margin-right: 8px;
+  width: 18px;
+}
+
+/* =================== HEADER TITLE =================== */
 .portal-title {
   position: absolute;
   left: 50%;
@@ -181,20 +173,25 @@
   font-size: 22px;
   margin-right: 15px;
 }
+
+/* =================== CONTENT BLOCKS =================== */
 .header {
   display: flex;
   align-items: center;
   margin-bottom: 25px;
 }
+
 .page-title {
   font-size: 28px;
   font-weight: 700;
   color: #1a237e;
 }
+
 .subtext {
   font-size: 14px;
   color: #546e7a;
 }
+
 .semester-block {
   background: white;
   border-radius: 10px;
@@ -203,55 +200,147 @@
   margin-bottom: 25px;
   border-left: 6px solid #124DB5;
 }
+
 .semester-header h2 {
   margin: 0 0 12px 0;
   color: #1b5e20;
 }
+
 table {
   width: 100%;
   border-collapse: collapse;
 }
+
 th, td {
   padding: 10px 12px;
   border-bottom: 1px solid #e0e0e0;
   text-align: left;
   font-size: 14px;
 }
+
 th {
   background-color: #124DB5;
   color: white;
 }
+
 tr:hover td {
   background: #f1f1f1;
 }
 
+.container {
+  width: 80%;
+  margin: 0 auto;
+  font-family: Arial, sans-serif;
+}
+
+h2 {
+  border-bottom: 2px solid #124DB5;
+  padding-bottom: 5px;
+  margin-top: 30px;
+}
+
+.info-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.info-table th {
+  text-align: left;
+  background-color: #124DB5;
+  color: white;
+  padding: 10px;
+  width: 25%;
+}
+
+.info-table td {
+  border: 1px solid #ddd;
+  padding: 10px;
+}
+
+ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+/* =================== RESPONSIVE FIXES =================== */
+@media (max-width: 992px) {
+  header {
+    padding: 10px 20px;
+  }
+
+  .portal-title {
+    font-size: 1.2rem;
+    position: static;
+    transform: none;
+    text-align: center;
+    flex: 1;
+  }
+
+  .user-info span {
+    display: none; /* hide username on tablets */
+  }
+
+  main {
+    padding: 20px;
+  }
+
   .container {
-    width: 80%;
-    margin: 0 auto;
-    font-family: Arial, sans-serif;
+    width: 95%;
   }
-  h2 {
-    border-bottom: 2px solid #124DB5;
-    padding-bottom: 5px;
-    margin-top: 30px;
+}
+
+@media (max-width: 768px) {
+  header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
   }
-  .info-table {
-    width: 100%;
-    border-collapse: collapse;
+
+  .user-info {
     margin-top: 10px;
   }
-  .info-table th {
-    text-align: left;
-    background-color: #124DB5;
-    color: white;
-    padding: 10px;
-    width: 25%;
+
+  .side-panel.open {
+    width: 220px;
   }
-  .info-table td {
-    border: 1px solid #ddd;
-    padding: 10px;
+
+  table, th, td {
+    font-size: 12px;
   }
-  ul {
-    margin: 0;
-    padding-left: 20px;
+
+  .semester-block {
+    padding: 15px;
   }
+}
+
+@media (max-width: 576px) {
+  header {
+    padding: 8px 12px;
+  }
+
+  .portal-title {
+    font-size: 1rem;
+  }
+
+  .left-btn, .options-btn {
+    font-size: 20px;
+  }
+
+  main {
+    padding: 15px;
+  }
+
+  .side-panel.open {
+    width: 180px;
+  }
+
+  .side-panel a {
+    font-size: 16px;
+    padding: 12px 20px;
+  }
+
+  th, td {
+    padding: 8px 6px;
+  }
+}
