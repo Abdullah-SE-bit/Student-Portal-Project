@@ -1,7 +1,7 @@
-# 🎓 University Management System (Flask + SQLite)
+# 🎓 FLAKE - All In One University Portal (Flask + SQLite)
 
-A simple and efficient **University Management System** built using **Flask** and **SQLite3**.  
-It manages **students**, **teachers**, **courses**, and **attendance** with clean dashboards and dynamic data loading.
+A simple and efficient **University Portal** built using **Flask** and **SQLite3**.  
+It manages **students**, **teachers**, **administration**, **courses**, and **attendance** with clean dashboards and dynamic data loading.
 
 ---
 

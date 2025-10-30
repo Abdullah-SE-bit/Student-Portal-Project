@@ -1,8 +1,11 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 import sqlite3
 from datetime import datetime
+import re
+from flask_socketio import SocketIO
 
 app = Flask(__name__)
+socketio = SocketIO(app, cors_allowed_origins="*")
 app.secret_key = "supersecretkey"  # Needed for session handling
 
 @app.route('/')
@@ -325,18 +328,97 @@ def student_inbox():
     stu_name = student['Name']
     roll_no = student['Roll_No']
 
-    # --- Extract Department and Section from Roll_No ---
-    # Example: M-22_SE-A-3001 -> dept='SE', section='A'
+    # --- Extract Department and Batch from Roll_No ---
+    # Example: M-22_SE-A-3001 -> parts = ['M', '22_SE', 'A', '3001'] OR if your format uses underscores differently:
+    # attempt robust parsing: find the part that contains department (like 'SE') and the batch (two-digit year)
     parts = roll_no.split('-')
-    stu_dept = parts[2] if len(parts) > 2 else None
-    stu_section = parts[3] if len(parts) > 3 else None
 
-    # --- Find teachers teaching student's dept & section ---
+    # Try to get batch (the commonly second hyphen-part contains batch or batch may be embedded)
+    # The earlier format you use: M-22_SE-A-3001  -> parts[1] is "22_SE"
+    batch = None
+    dept = None
+    section = None
+
+    if len(parts) >= 2:
+        # parts[1] may contain "22_SE" or "22" — handle both
+        p1 = parts[1]
+        # if there's an underscore, split
+        if '_' in p1:
+            sub = p1.split('_')
+            # expect sub like ['22', 'SE']
+            if len(sub) >= 1:
+                batch = sub[0]
+            if len(sub) >= 2:
+                dept = sub[1]
+        else:
+            # no underscore: maybe batch alone, next part contains dept
+            batch = p1
+            if len(parts) >= 3:
+                # parts[2] could be "SE" or "SE-A" — try to extract dept
+                if '_' in parts[2]:
+                    dept = parts[2].split('_')[0]
+                else:
+                    # if parts[2] like "SE" or "SE-A" (take letters before non-letters)
+                    dept = ''.join([ch for ch in parts[2] if ch.isalpha()])
+
+    # fallback: if still not found try to locate a two-digit batch and an uppercase dept token anywhere
+    if not batch or not dept:
+        tokens = re.split(r'[_\-]', roll_no)
+        for t in tokens:
+            if not batch and re.fullmatch(r'\d{2}', t):
+                batch = t
+            if not dept and re.fullmatch(r'[A-Za-z]{2,}', t):
+                # choose first alphabetic token that looks like dept
+                dept = t
+
+    # section extraction (if exists in a part like 'A' or 'SE-A')
+    if len(parts) >= 3:
+        # look for single-letter section in parts
+        sec_candidate = parts[2]
+        if '-' in sec_candidate or '_' in sec_candidate:
+            # strip non-letters
+            section = ''.join([ch for ch in sec_candidate if ch.isalpha()])
+        else:
+            section = ''.join([ch for ch in sec_candidate if ch.isalpha()])
+
+    # Safety defaults
+    if not batch:
+        batch = ''   # will map to None later
+    if not dept:
+        dept = ''    # empty dept => no teachers returned
+
+    # --- Map batch -> semester (your mapping) ---
+    batch_to_sem = {
+        '22': 7,
+        '23': 5,
+        '24': 3,
+        '25': 1
+    }
+    sem = batch_to_sem.get(batch, None)
+
+    # If semester cannot be determined, show no teachers (or fallback to dept-only if desired)
+    if sem is None:
+        # optional: fallback to dept-only lookup. For now block and return empty contacts.
+        contacts = []
+        conn.close()
+        return render_template('inbox_S.html', user=sid, user_name=stu_name, contacts=contacts)
+
+    # --- Convert semester -> course-code digit ---
+    # special rule you gave: semester 1 is encoded as '0' in Course_Code; others use their number char
+    if sem == 1:
+        code_digit = '0'
+    else:
+        code_digit = str(sem)
+
+    # --- Query teachers filtered by department and course-code digit ---
+    # We'll find the character immediately after the hyphen in Course_Code and match it to code_digit
+    # Use SQLite substr + instr to extract the char after '-'
     cur.execute("""
-        SELECT DISTINCT t.Teacher_ID, t.Name, t.Course_Name
+        SELECT DISTINCT t.Teacher_ID, t.Name, t.Course_Code, t.Course_Name
         FROM teachers t
         WHERE t.Department = ?
-    """, (stu_dept,))
+          AND substr(t.Course_Code, instr(t.Course_Code, '-') + 1, 1) = ?
+    """, (dept, code_digit))
 
     teachers = cur.fetchall()
 
@@ -346,6 +428,7 @@ def student_inbox():
         contacts.append({
             'id': t['Teacher_ID'],
             'name': t['Name'],
+            'course_code': t['Course_Code'],
             'course': t['Course_Name'],
             'last_msg': 'No messages yet',
             'last_time': '',
@@ -363,6 +446,7 @@ def student_inbox():
 
 
 
+
 # ------------------ RUN SERVER ------------------
-if __name__ == "__main__":
-    app.run(debug=True)
+if __name__ == '__main__':
+    socketio.run(app, debug=True)
