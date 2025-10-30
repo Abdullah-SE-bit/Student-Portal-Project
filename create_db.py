@@ -16,7 +16,7 @@ def init_db():
     cur.execute('''CREATE TABLE IF NOT EXISTS admins (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         admin_id TEXT UNIQUE NOT NULL,
-        password TEXT NOT NULL
+        password TEXT NOT NULL  
     )''')
 
     cur.execute('''

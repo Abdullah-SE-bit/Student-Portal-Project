@@ -1,0 +1,337 @@
+{% extends "student_dashboard.html" %}
+
+{% block title %}Course Registration{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='Course_Registraion.css') }}">
+
+<!-- Store data in HTML attributes -->
+<div id="appData" 
+     data-courses='{{ courses | tojson | safe }}'
+     data-enrolled='{{ enrolled_courses | tojson | safe }}'
+     data-passed='{{ passed_courses | tojson | safe }}'
+     data-semester='{{ current_semester }}'
+     data-student='{{ student_info | tojson | safe }}'
+     style="display: none;"></div>
+
+<div class="container">
+    <!-- Header -->
+    <div class="header">
+        <div class="logo">📚</div>
+        <div class="header-text">
+            <h1>Course Registration</h1>
+            <p>Select and enroll in courses for your semester</p>
+        </div>
+    </div>
+
+    <!-- Alert Messages -->
+    <div class="alert success" id="successAlert"></div>
+    <div class="alert error" id="errorAlert"></div>
+
+    <!-- Info Box -->
+    <div class="info-box" style="background: #f3e5f5; border-left-color: #7b1fa2; color: #4a148c;">
+        📊 <strong>Your Semester:</strong> <span id="semesterDisplay" style="font-weight: 700; font-size: 16px;"></span>
+    </div>
+
+    <!-- Course Info Box -->
+    <div class="info-box">
+        ℹ️ <strong>Course Registration Logic:</strong><br>
+        • 📅 <strong>Current Sem</strong> - New courses for your current semester<br>
+        • ⚠️ <strong>RETAKE</strong> - Prerequisite courses you need to pass first<br>
+        • Green courses indicate you've already enrolled in them
+    </div>
+
+    <!-- Filter Section -->
+    <div class="filter-section">
+        <div class="filter-group">
+            <label for="searchFilter">Search Courses:</label>
+            <input type="text" id="searchFilter" placeholder="Course name or code...">
+        </div>
+
+        <button class="btn-filter" onclick="resetFilters()">Reset</button>
+    </div>
+
+    <!-- Courses Grid -->
+    <div class="courses-grid" id="coursesGrid">
+        <!-- Populated by JavaScript from Jinja data -->
+    </div>
+
+    <div class="no-courses" id="noCoursesMsg" style="display: none;">
+        No courses found matching your search.
+    </div>
+
+    <!-- Cart Section -->
+    <div class="cart-section">
+        <div class="cart-header">
+            📋 My Course Registration
+            <button class="btn-filter" onclick="clearCart()" style="padding: 8px 15px; font-size: 12px;">Clear All</button>
+        </div>
+
+        <div class="cart-list" id="cartList">
+            <p style="color: #999; font-size: 13px;">No courses selected yet</p>
+        </div>
+
+        <div class="cart-summary">
+            <div class="summary-stat">
+                <div class="label">Total Courses</div>
+                <div class="value" id="totalCourses">0</div>
+            </div>
+            <div class="summary-stat">
+                <div class="label">Total Credit Hours</div>
+                <div class="value" id="totalCredits">0</div>
+            </div>
+            <button class="btn-submit" id="submitBtn" onclick="submitRegistration()">Submit Registration</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Read data from HTML attributes (clean JavaScript)
+    const appData = document.getElementById('appData');
+    const allCourses = JSON.parse(appData.dataset.courses);
+    const enrolledCourses = JSON.parse(appData.dataset.enrolled);
+    const passedCourses = JSON.parse(appData.dataset.passed);
+    const currentSemester = parseInt(appData.dataset.semester);
+    const studentInfo = JSON.parse(appData.dataset.student);
+    
+    let selectedCourses = [...enrolledCourses];
+
+    // Initialize
+    window.addEventListener('DOMContentLoaded', function() {
+        displayStudentInfo();
+        renderCourses(allCourses);
+        updateCart();
+    });
+
+    function displayStudentInfo() {
+        const semesterDisplay = document.getElementById('semesterDisplay');
+        if (semesterDisplay && studentInfo && currentSemester) {
+            semesterDisplay.textContent = 'Semester ' + currentSemester + ' (Batch ' + studentInfo.batch + ', ' + studentInfo.degree_name + ')';
+        }
+    }
+
+    function renderCourses(courses) {
+        const grid = document.getElementById('coursesGrid');
+        const noMsg = document.getElementById('noCoursesMsg');
+
+        if (!courses || courses.length === 0) {
+            grid.innerHTML = '';
+            noMsg.style.display = 'block';
+            return;
+        }
+
+        noMsg.style.display = 'none';
+        let html = '';
+        
+        for (let i = 0; i < courses.length; i++) {
+            const course = courses[i];
+            const isEnrolled = enrolledCourses.indexOf(course.code) !== -1;
+            const prerequisiteMet = !course.prerequisite || passedCourses.indexOf(course.prerequisite) !== -1;
+            const canEnroll = !isEnrolled && (prerequisiteMet || !course.prerequisite);
+            const isRetake = course.type === 'retake';
+            const cardClass = isEnrolled ? 'enrolled' : (isRetake ? 'retake' : '');
+
+            html += '<div class="course-card ' + cardClass + '">';
+            html += '  <div class="course-header">';
+            html += '    <span class="course-code ' + (isEnrolled ? 'enrolled' : '') + '">' + course.code + '</span>';
+            
+            if (isRetake) {
+                html += '    <span class="course-type-badge retake">⚠️ RETAKE</span>';
+            }
+            if (course.type === 'current') {
+                html += '    <span class="course-type-badge current">📅 Current Sem</span>';
+            }
+            if (isEnrolled) {
+                html += '    <span class="enrollment-status">✓ Enrolled</span>';
+            }
+            
+            html += '  </div>';
+            html += '  <div class="course-name">' + course.name + '</div>';
+            html += '  <div class="course-info">';
+            html += '    <div class="info-item">';
+            html += '      <span class="info-label">Semester:</span>';
+            html += '      <span>' + course.semester + '</span>';
+            html += '    </div>';
+            html += '    <div class="info-item">';
+            html += '      <span class="info-label">Credits:</span>';
+            html += '      <span>' + course.credits + '</span>';
+            html += '    </div>';
+            html += '  </div>';
+            
+            if (course.prerequisite) {
+                const prereqClass = prerequisiteMet ? 'met' : '';
+                const prereqLabel = isRetake ? '🔴 Failed:' : '📋 Prerequisite:';
+                const prereqStatus = prerequisiteMet ? '✓' : '✗';
+                html += '  <div class="prerequisite ' + prereqClass + '">';
+                html += '    ' + prereqLabel + ' ' + course.prerequisite + ' ' + prereqStatus;
+                html += '  </div>';
+            }
+            
+            html += '  <div class="course-actions">';
+            if (isEnrolled) {
+                html += '    <button class="btn-unenroll" onclick="toggleCourse(\'' + course.code + '\')">Remove</button>';
+            } else {
+                const btnText = isRetake ? 'Retake' : (canEnroll ? 'Enroll' : 'Prerequisites Not Met');
+                const isDisabled = !canEnroll ? 'disabled' : '';
+                html += '    <button class="btn-enroll" onclick="toggleCourse(\'' + course.code + '\')" ' + isDisabled + '>';
+                html += '      ' + btnText;
+                html += '    </button>';
+            }
+            html += '  </div>';
+            html += '</div>';
+        }
+        
+        grid.innerHTML = html;
+    }
+
+    function filterCourses() {
+        const search = document.getElementById('searchFilter').value.toLowerCase();
+        const filtered = [];
+
+        for (let i = 0; i < allCourses.length; i++) {
+            const course = allCourses[i];
+            const matchSearch = !search || 
+                course.code.toLowerCase().indexOf(search) !== -1 || 
+                course.name.toLowerCase().indexOf(search) !== -1;
+            
+            if (matchSearch) {
+                filtered.push(course);
+            }
+        }
+
+        renderCourses(filtered);
+    }
+
+    function resetFilters() {
+        document.getElementById('searchFilter').value = '';
+        renderCourses(allCourses);
+    }
+
+    function toggleCourse(code) {
+        const enrolledIndex = enrolledCourses.indexOf(code);
+        
+        if (enrolledIndex !== -1) {
+            enrolledCourses.splice(enrolledIndex, 1);
+            const selIndex = selectedCourses.indexOf(code);
+            if (selIndex !== -1) {
+                selectedCourses.splice(selIndex, 1);
+            }
+        } else if (selectedCourses.indexOf(code) === -1) {
+            selectedCourses.push(code);
+        } else {
+            const selIndex = selectedCourses.indexOf(code);
+            if (selIndex !== -1) {
+                selectedCourses.splice(selIndex, 1);
+            }
+        }
+        
+        renderCourses(allCourses);
+        updateCart();
+    }
+
+    function updateCart() {
+        const cartList = document.getElementById('cartList');
+        const totalCourses = document.getElementById('totalCourses');
+        const totalCredits = document.getElementById('totalCredits');
+
+        if (!selectedCourses || selectedCourses.length === 0) {
+            cartList.innerHTML = '<p style="color: #999; font-size: 13px;">No courses selected yet</p>';
+            totalCourses.textContent = '0';
+            totalCredits.textContent = '0';
+            return;
+        }
+
+        let html = '';
+        let totalCreditsValue = 0;
+
+        for (let i = 0; i < selectedCourses.length; i++) {
+            const courseCode = selectedCourses[i];
+            let course = null;
+            
+            for (let j = 0; j < allCourses.length; j++) {
+                if (allCourses[j].code === courseCode) {
+                    course = allCourses[j];
+                    break;
+                }
+            }
+            
+            if (course) {
+                html += '<div class="cart-item">';
+                html += '  ' + course.code + ' - ' + course.name;
+                html += '  <span class="remove" onclick="toggleCourse(\'' + course.code + '\')">✕</span>';
+                html += '</div>';
+                totalCreditsValue += course.credits;
+            }
+        }
+
+        cartList.innerHTML = html;
+        totalCourses.textContent = selectedCourses.length;
+        totalCredits.textContent = totalCreditsValue;
+    }
+
+    function clearCart() {
+        selectedCourses = [];
+        for (let i = 0; i < enrolledCourses.length; i++) {
+            selectedCourses.push(enrolledCourses[i]);
+        }
+        renderCourses(allCourses);
+        updateCart();
+    }
+
+    function submitRegistration() {
+        if (!selectedCourses || selectedCourses.length === 0) {
+            showAlert('error', 'Please select at least one course');
+            return;
+        }
+
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Submitting...';
+
+        fetch('/api/register-courses', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({courses: selectedCourses})
+        })
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(data) {
+            if (data.success) {
+                showAlert('success', 'Successfully registered for ' + selectedCourses.length + ' course(s)!');
+                setTimeout(function() {
+                    location.reload();
+                }, 2000);
+            } else {
+                showAlert('error', data.error || 'Registration failed');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit Registration';
+            }
+        })
+        .catch(function(error) {
+            console.error('Error:', error);
+            showAlert('error', 'An error occurred during registration');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Submit Registration';
+        });
+    }
+
+    function showAlert(type, message) {
+        const alert = document.getElementById(type + 'Alert');
+        if (alert) {
+            alert.textContent = message;
+            alert.style.display = 'block';
+            setTimeout(function() {
+                alert.style.display = 'none';
+            }, 4000);
+        }
+    }
+
+    // Add event listener for search filter
+    const searchFilter = document.getElementById('searchFilter');
+    if (searchFilter) {
+        searchFilter.addEventListener('input', filterCourses);
+    }
+</script>
+
+{% endblock %}

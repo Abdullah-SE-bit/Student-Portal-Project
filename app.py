@@ -445,8 +445,316 @@ def student_inbox():
     )
 
 
+# ------------------- Course Registration ---------------------
+# Add these utility functions and routes to your app.py file
+
+def extract_student_info(roll_no):
+    """
+    Extract batch, degree, section from Roll_No
+    Example Roll_No formats:
+    - FA23-SE-A-1234 (Format 1)
+    - M-22_SE-A-3001 (Format 2)
+    
+    Returns dict with: batch, degree_code, degree_name, section
+    """
+    try:
+        degree_map = {
+            'SE': 'Software Engineering',
+            'AI': 'Artificial Intelligence',
+            'DS': 'Data Science',
+            'CY': 'Cyber Security'
+        }
+        
+        parts = roll_no.split('-')
+        batch = None
+        degree_code = None
+        section = None
+        
+        # Handle Format 1: FA23-SE-A-1234
+        if len(parts) >= 3 and len(parts[0]) >= 2:
+            prefix = parts[0]
+            batch = ''.join([ch for ch in prefix if ch.isdigit()])
+            if len(parts) > 1 and parts[1] in degree_map:
+                degree_code = parts[1]
+            if len(parts) > 2:
+                section = parts[2]
+        
+        # Handle Format 2: M-22_SE-A-3001
+        elif len(parts) >= 2 and '_' in parts[1]:
+            sub_parts = parts[1].split('_')
+            if len(sub_parts) >= 1:
+                batch = sub_parts[0]
+            if len(sub_parts) >= 2 and sub_parts[1] in degree_map:
+                degree_code = sub_parts[1]
+            if len(parts) > 2:
+                section = parts[2]
+        
+        # Fallback
+        if not batch or not degree_code:
+            tokens = roll_no.replace('_', '-').split('-')
+            for token in tokens:
+                if not batch and len(token) >= 2 and token[-2:].isdigit():
+                    batch = token[-2:]
+                if not degree_code:
+                    alpha_only = ''.join([ch for ch in token if ch.isalpha()])
+                    if len(alpha_only) == 2 and alpha_only in degree_map:
+                        degree_code = alpha_only
+        
+        degree_name = degree_map.get(degree_code, degree_code if degree_code else 'N/A')
+        
+        return {
+            'batch': batch or 'N/A',
+            'degree_code': degree_code or 'N/A',
+            'degree_name': degree_name,
+            'section': section or 'N/A'
+        }
+    
+    except Exception as e:
+        print(f"Error extracting student info: {e}")
+        return {'batch': 'N/A', 'degree_code': 'N/A', 'degree_name': 'N/A', 'section': 'N/A'}
 
 
+def batch_to_semester(batch):
+    """
+    Convert batch year to current semester (Based on app.py logic)
+    
+    Mapping (for 2025):
+    - 2022 batch (22) -> Semester 7
+    - 2023 batch (23) -> Semester 5
+    - 2024 batch (24) -> Semester 3
+    - 2025 batch (25) -> Semester 1
+    """
+    batch_to_sem = {
+        '22': 7,
+        '23': 5,
+        '24': 3,
+        '25': 1
+    }
+    return batch_to_sem.get(str(batch), None)
+
+
+def semester_to_course_digit(semester):
+    """
+    Convert semester number to course code digit
+    
+    Special rule (from app.py student_inbox logic):
+    - Semester 1 is encoded as '0' in Course_Code
+    - Semester 3 is encoded as '3' (or '30', '31', etc.)
+    - Semester 5 is encoded as '5' (or '50', '51', etc.)
+    - Semester 7 is encoded as '7' (or '70', '71', etc.)
+    
+    Returns the digit that appears after '-' in course code
+    """
+    if semester == 1:
+        return '0'
+    else:
+        return str(semester)
+
+
+# -------------------- COURSE REGISTRATION --------------------
+@app.route('/course_registration')
+def course_registration():
+    """
+    Display course registration page with intelligent course offering:
+    1. First, offer courses for current semester where prerequisites are met
+    2. If prerequisite not met, offer the prerequisite course for retake
+    3. Include failed courses that need to be retaken
+    """
+    if 'user' not in session:
+        return redirect(url_for('student_login'))
+    
+    sid = session['user']
+    
+    try:
+        conn = sqlite3.connect('flake.db')
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+        
+        # Get student info
+        cur.execute("""
+            SELECT Roll_No, Name FROM students WHERE Roll_No = ?
+        """, (sid,))
+        student_row = cur.fetchone()
+        
+        if not student_row:
+            conn.close()
+            flash("Student not found", "danger")
+            return redirect(url_for('student_home'))
+        
+        # Extract batch and degree from Roll_No
+        student_info = extract_student_info(student_row['Roll_No'])
+        batch = student_info['batch']
+        degree_code = student_info['degree_code']
+        
+        # Get current semester based on batch
+        current_semester = batch_to_semester(batch)
+        
+        if current_semester is None:
+            conn.close()
+            flash("Unable to determine your current semester", "danger")
+            return redirect(url_for('student_home'))
+        
+        # Convert semester to course code digit (following app.py logic)
+        code_digit = semester_to_course_digit(current_semester)
+        
+        # Get all courses for this semester
+        cur.execute("""
+            SELECT Course_Code, Course_Name, Credit_Hr, Prerequisite
+            FROM courses
+            WHERE substr(Course_Code, instr(Course_Code, '-') + 1, 1) = ?
+            ORDER BY Course_Code
+        """, (code_digit,))
+        
+        current_sem_courses_raw = cur.fetchall()
+        
+        # Get enrolled courses for this student
+        cur.execute("""
+            SELECT Course_Code FROM enrollments WHERE Roll_No = ?
+        """, (sid,))
+        enrolled = [row['Course_Code'] for row in cur.fetchall()]
+        
+        # Get passed courses (prerequisites met)
+        cur.execute("""
+            SELECT Course_Code FROM passed_courses WHERE Roll_No = ?
+        """, (sid,))
+        passed = [row['Course_Code'] for row in cur.fetchall()]
+        
+        # Now build the courses list with intelligent offering logic
+        courses_to_offer = []
+        prerequisite_courses_to_retake = set()
+        
+        for c in current_sem_courses_raw:
+            code = c['Course_Code']
+            prerequisite = c['Prerequisite']
+            
+            # Check if student has passed the prerequisite
+            prerequisite_met = (not prerequisite or prerequisite in passed)
+            
+            if not prerequisite_met:
+                # Prerequisite NOT met - add the prerequisite course to retake list
+                if prerequisite:
+                    prerequisite_courses_to_retake.add(prerequisite)
+            else:
+                # Prerequisite met - add this course to current semester offerings
+                code_parts = code.split('-')
+                sem_digit = code_parts[1][0] if len(code_parts) > 1 else '0'
+                
+                if sem_digit == '0':
+                    semester = 1
+                else:
+                    semester = int(sem_digit) if sem_digit.isdigit() else 1
+                
+                department = code_parts[0] if len(code_parts) > 0 else 'CS'
+                
+                courses_to_offer.append({
+                    'code': code,
+                    'name': c['Course_Name'],
+                    'credits': c['Credit_Hr'],
+                    'semester': semester,
+                    'prerequisite': prerequisite,
+                    'department': department,
+                    'type': 'current'  # Current semester course
+                })
+        
+        # Now add prerequisite courses that need to be retaken
+        if prerequisite_courses_to_retake:
+            cur.execute("""
+                SELECT Course_Code, Course_Name, Credit_Hr, Prerequisite
+                FROM courses
+                WHERE Course_Code IN ({})
+            """.format(','.join(['?' for _ in prerequisite_courses_to_retake])),
+                tuple(prerequisite_courses_to_retake))
+            
+            prereq_courses_raw = cur.fetchall()
+            
+            for c in prereq_courses_raw:
+                code = c['Course_Code']
+                code_parts = code.split('-')
+                sem_digit = code_parts[1][0] if len(code_parts) > 1 else '0'
+                
+                if sem_digit == '0':
+                    semester = 1
+                else:
+                    semester = int(sem_digit) if sem_digit.isdigit() else 1
+                
+                department = code_parts[0] if len(code_parts) > 0 else 'CS'
+                
+                courses_to_offer.append({
+                    'code': code,
+                    'name': c['Course_Name'],
+                    'credits': c['Credit_Hr'],
+                    'semester': semester,
+                    'prerequisite': c['Prerequisite'],
+                    'department': department,
+                    'type': 'retake'  # Prerequisite course to retake
+                })
+        
+        conn.close()
+        
+        # Sort: current semester courses first, then retake courses
+        courses_sorted = sorted(courses_to_offer, key=lambda x: (x['type'] != 'current', x['code']))
+        
+        return render_template(
+            'course_registration.html',
+            user=sid,
+            user_name=student_row['Name'],
+            student_info=student_info,
+            current_semester=current_semester,
+            courses=courses_sorted,
+            enrolled_courses=enrolled,
+            passed_courses=passed
+        )
+    
+    except Exception as e:
+        print(f"Error loading course registration: {e}")
+        flash("Error loading course registration", "danger")
+        return redirect(url_for('student_home'))
+
+
+@app.route('/api/register-courses', methods=['POST'])
+def register_courses():
+    """Register student for selected courses"""
+    if 'user' not in session:
+        return {'success': False, 'error': 'Not logged in'}, 401
+    
+    sid = session['user']
+    data = request.get_json()
+    courses = data.get('courses', [])
+    
+    if not courses:
+        return {'success': False, 'error': 'No courses selected'}, 400
+    
+    try:
+        conn = sqlite3.connect('flake.db')
+        cur = conn.cursor()
+        
+        # Delete existing enrollments for this student
+        cur.execute("DELETE FROM enrollments WHERE Roll_No = ?", (sid,))
+        
+        # Insert new enrollments
+        for course_code in courses:
+            # Validate course exists
+            cur.execute("SELECT Course_Code FROM courses WHERE Course_Code = ?", (course_code,))
+            if not cur.fetchone():
+                conn.close()
+                return {'success': False, 'error': f'Invalid course code: {course_code}'}, 400
+            
+            cur.execute("INSERT INTO enrollments VALUES (?, ?)", (sid, course_code))
+        
+        conn.commit()
+        conn.close()
+        
+        return {
+            'success': True,
+            'message': f'Successfully registered for {len(courses)} course(s)'
+        }
+    
+    except Exception as e:
+        print(f"Error registering courses: {e}")
+        return {'success': False, 'error': 'Registration failed'}, 500
+    
 # ------------------ RUN SERVER ------------------
 if __name__ == '__main__':
     socketio.run(app, debug=True)
+
+
