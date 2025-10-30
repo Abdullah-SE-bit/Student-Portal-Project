@@ -1,0 +1,323 @@
+{% extends "student_dashboard.html" %}
+{% block title %}Inbox{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/inbox.css') }}">
+
+<div class="inbox-app">
+  <!-- Sidebar (contacts) -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="me">
+        <div class="avatar">{{ user[0]|upper }}</div>
+        <div class="me-info">
+          <div class="me-name">{{ user_name if user_name else user }}</div>
+          <div class="me-status">Online</div>
+        </div>
+      </div>
+      <div class="sidebar-actions">
+        <button class="icon-btn" id="newChatBtn" title="New chat">＋</button>
+        <button class="icon-btn" id="sidebarToggle" title="Toggle">≡</button>
+      </div>
+    </div>
+
+    <div class="search">
+      <input type="search" id="contactSearch" placeholder="Search contacts..." />
+    </div>
+
+    <div class="contacts" id="contactsList">
+      {# contacts is list of {id, name, last_msg, last_time, unread} #}
+      {% for c in contacts %}
+      <div class="contact-item" data-id="{{ c.id }}" data-name="{{ c.name }}">
+        <div class="contact-left">
+          <div class="contact-avatar">{{ c.name[0]|upper }}</div>
+        </div>
+        <div class="contact-mid">
+          <div class="contact-name">{{ c.name }}</div>
+          <div class="contact-last">{{ c.last_msg or "" }}</div>
+        </div>
+        <div class="contact-right">
+          <div class="contact-time">{{ c.last_time or '' }}</div>
+          {% if c.unread and c.unread > 0 %}
+            <div class="contact-unread">{{ c.unread }}</div>
+          {% endif %}
+        </div>
+      </div>
+      {% else %}
+      <div class="no-contacts">No contacts found.</div>
+      {% endfor %}
+    </div>
+  </aside>
+
+  <!-- Chat area -->
+  <main class="chat-area" id="chatArea">
+    <div class="chat-header" id="chatHeader">
+      <div class="header-left">
+        <button class="icon-btn" id="backToContacts" title="Back">◀</button>
+        <div class="chat-avatar" id="chatAvatar">?</div>
+        <div class="chat-meta">
+          <div class="chat-name" id="chatName">Select a contact</div>
+          <div class="chat-sub">Last seen recently</div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" title="Search messages">🔎</button>
+        <button class="icon-btn" title="More">⋯</button>
+      </div>
+    </div>
+
+    <div class="messages-wrap" id="messagesWrap">
+      <div class="messages-empty">Choose a contact to start messaging.</div>
+    </div>
+
+    <form id="messageForm" class="message-form" autocomplete="off" onsubmit="return false;">
+      <button type="button" class="emoji-btn" title="Emoji">😊</button>
+      <input type="text" id="messageInput" placeholder="Type a message" />
+      <button type="submit" id="sendBtn" class="send-btn">Send</button>
+    </form>
+  </main>
+</div>
+
+<!-- Socket.IO client (compatible with Flask-SocketIO) -->
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js" integrity="" crossorigin="anonymous"></script>
+
+<script>
+/* ===== Inline JS for Inbox (works with Flask-SocketIO) =====
+   - Expects server events:
+     connect -> emitted automatically
+     'message' -> {from, to, text, ts}
+     'typing' -> {from, to, typing}
+   - Client emits:
+     'join' -> {user_id}
+     'private_message' -> {to, text}
+     'typing' -> {to, typing}
+   - Also fetches history via GET /messages/<contact_id> (implement in Flask)
+*/
+
+(() => {
+  const userId = "{{ user }}";              // student roll or teacher id
+  const userName = "{{ user_name or '' }}";
+  const contactsListEl = document.getElementById('contactsList');
+  const messagesWrap = document.getElementById('messagesWrap');
+  const chatNameEl = document.getElementById('chatName');
+  const chatAvatarEl = document.getElementById('chatAvatar');
+  const messageInput = document.getElementById('messageInput');
+  const sendBtn = document.getElementById('sendBtn');
+  const messageForm = document.getElementById('messageForm');
+  const sidebar = document.getElementById('sidebar');
+  const sidebarToggle = document.getElementById('sidebarToggle');
+  const backToContacts = document.getElementById('backToContacts');
+
+  let activeContactId = null;
+  let socket = null;
+
+  function initSocket() {
+    socket = io(); // default connects to same host
+    socket.on('connect', () => {
+      console.log('connected to socket server', socket.id);
+      socket.emit('join', { user_id: userId });
+    });
+
+    socket.on('message', data => {
+      // format: {from, to, text, ts}
+      const peerId = data.from === userId ? data.to : data.from;
+      const isActive = (peerId === activeContactId);
+      appendMessageElement(data, (data.from === userId));
+      if (!isActive) markContactUnread(peerId);
+      scrollToBottom();
+    });
+
+    socket.on('typing', d => {
+      // d: {from, to, typing}
+      if (d.from === activeContactId) {
+        showTypingIndicator(d.typing ? true : false);
+      }
+    });
+
+    socket.on('disconnect', () => {
+      console.log('socket disconnected');
+    });
+  }
+
+  // Helpers
+  function el(tag, cls, html) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (html !== undefined) e.innerHTML = html;
+    return e;
+  }
+
+  function clearMessages() {
+    messagesWrap.innerHTML = '';
+  }
+
+  function appendMessageElement(msg, isMine) {
+    // msg: {from, to, text, ts}
+    // create bubble
+    const row = el('div', 'msg-row ' + (isMine ? 'mine' : 'their'));
+    const bubble = el('div', 'msg-bubble', escapeHtml(msg.text));
+    const meta = el('div', 'msg-meta', formatTime(msg.ts));
+    bubble.appendChild(meta);
+    row.appendChild(bubble);
+    // if messagesWrap empty message-empty remove it
+    const emptyNotice = messagesWrap.querySelector('.messages-empty');
+    if (emptyNotice) emptyNotice.remove();
+    messagesWrap.appendChild(row);
+  }
+
+  function showTypingIndicator(on) {
+    let tid = document.getElementById('typingIndicator');
+    if (on) {
+      if (!tid) {
+        tid = el('div', 'typing', 'Typing...');
+        tid.id = 'typingIndicator';
+        messagesWrap.appendChild(tid);
+        scrollToBottom();
+      }
+    } else {
+      if (tid) tid.remove();
+    }
+  }
+
+  function formatTime(ts) {
+    if (!ts) return '';
+    try {
+      const d = new Date(ts);
+      return d.toLocaleString();
+    } catch(e) {
+      return ts;
+    }
+  }
+
+  function escapeHtml(s) {
+    if (!s) return '';
+    return s.replace(/[&<>"']/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#039;"})[m]);
+  }
+
+  function scrollToBottom() {
+    messagesWrap.scrollTop = messagesWrap.scrollHeight;
+  }
+
+  // Contact click
+  contactsListEl.addEventListener('click', e => {
+    let elNode = e.target;
+    while (elNode && !elNode.classList.contains('contact-item')) {
+      elNode = elNode.parentElement;
+    }
+    if (!elNode) return;
+    const cid = elNode.dataset.id;
+    openChatWith(cid, elNode.dataset.name);
+  });
+
+  // open chat with contact id: fetch history and set active
+  function openChatWith(contactId, name) {
+    if (!contactId) return;
+    activeContactId = contactId;
+    chatNameEl.textContent = name;
+    chatAvatarEl.textContent = name[0] ? name[0].toUpperCase() : '?';
+    clearMessages();
+    // fetch history (server should return [{from,to,text,ts},...])
+    fetch('/messages/' + encodeURIComponent(contactId))
+      .then(r => r.ok ? r.json() : Promise.reject('Failed'))
+      .then(data => {
+        // data assumed list
+        if (!Array.isArray(data) || data.length === 0) {
+          messagesWrap.innerHTML = '<div class="messages-empty">No messages yet. Say hello 👋</div>';
+        } else {
+          data.forEach(m => appendMessageElement(m, m.from === userId));
+        }
+        scrollToBottom();
+        clearContactUnread(contactId);
+      })
+      .catch(err => {
+        messagesWrap.innerHTML = '<div class="messages-empty">Unable to load chat.</div>';
+        console.error(err);
+      });
+  }
+
+  // send message
+  sendBtn.addEventListener('click', sendMessage);
+  messageInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    } else {
+      // typing indicator
+      if (activeContactId && socket) {
+        socket.emit('typing', { to: activeContactId, typing: true });
+        // stop after 1500ms
+        if (window._typingTO) clearTimeout(window._typingTO);
+        window._typingTO = setTimeout(()=> {
+          socket.emit('typing', { to: activeContactId, typing: false });
+        }, 1200);
+      }
+    }
+  });
+
+  function sendMessage() {
+    const txt = messageInput.value && messageInput.value.trim();
+    if (!txt || !activeContactId) return;
+    const payload = { to: activeContactId, text: txt };
+    // emit via socket
+    if (socket) {
+      socket.emit('private_message', payload);
+      // optimistic UI
+      appendMessageElement({ from: userId, to: activeContactId, text: txt, ts: new Date().toISOString() }, true);
+      messageInput.value = '';
+      scrollToBottom();
+    } else {
+      // fallback: POST to server
+      fetch('/messages/' + encodeURIComponent(activeContactId), {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(payload)
+      }).then(()=> {
+        // appended when server broadcasts back via socket
+      }).catch(console.error);
+    }
+  }
+
+  // Unread helpers (UI only)
+  function markContactUnread(contactId) {
+    const c = contactsListEl.querySelector('.contact-item[data-id="' + contactId + '"]');
+    if (!c) return;
+    let badge = c.querySelector('.contact-unread');
+    if (!badge) {
+      badge = el('div', 'contact-unread', '1');
+      c.querySelector('.contact-right').appendChild(badge);
+    } else {
+      badge.textContent = parseInt(badge.textContent||0) + 1;
+    }
+  }
+  function clearContactUnread(contactId) {
+    const c = contactsListEl.querySelector('.contact-item[data-id="' + contactId + '"]');
+    if (!c) return;
+    const badge = c.querySelector('.contact-unread');
+    if (badge) badge.remove();
+  }
+
+  // Sidebar toggle for mobile
+  sidebarToggle.addEventListener('click', () => sidebar.classList.toggle('collapsed'));
+  backToContacts.addEventListener('click', () => {
+    // show sidebar on mobile
+    sidebar.classList.remove('collapsed');
+  });
+
+  // Search filter
+  document.getElementById('contactSearch').addEventListener('input', (e) => {
+    const q = e.target.value.toLowerCase();
+    document.querySelectorAll('.contact-item').forEach(ci => {
+      const name = (ci.dataset.name||'').toLowerCase();
+      ci.style.display = name.includes(q) ? '' : 'none';
+    });
+  });
+
+  // Initialize socket
+  initSocket();
+
+  // Expose for debug
+  window._inbox = { openChatWith, socket };
+})();
+</script>
+
+{% endblock %}

@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 import sqlite3
+from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = "supersecretkey"  # Needed for session handling
@@ -59,7 +60,6 @@ def student_login():
     return render_template('login_S.html')
 
 
-
 # ---------- ADMIN LOGIN ----------
 @app.route('/login_A.html', methods=['GET', 'POST'])
 def admin_login():
@@ -82,7 +82,6 @@ def admin_login():
     return render_template('login_A.html')
 
 
-
 @app.route('/teacher_dashboard')
 def teacher_dashboard():
     return render_template(
@@ -90,6 +89,7 @@ def teacher_dashboard():
         user=session.get('user'),
         user_name=session.get('user_name')
     )
+
 
 @app.route('/student_dashboard')
 def student_dashboard():
@@ -105,15 +105,14 @@ def admin_dashboard():
     return render_template('admin_dashboard.html', user=session.get('user'))
 
 
-
 # ---------- LOGOUT ----------
 @app.route('/logout')
 def logout():
     session.pop('user', None)
     return redirect(url_for('home'))
 
-# ---------- STUDENT HOME -----------
 
+# ---------- STUDENT HOME -----------
 @app.route('/student_home')
 def student_home():
     if 'user' not in session:
@@ -157,12 +156,11 @@ def student_home():
     )
 
 
-# --------------TEANTAVIVE STUDY PLAN -----------------------
-
+# -------------- TENTATIVE STUDY PLAN -----------------------
 @app.route('/student_study_plan')
 def student_study_plan():
-    # You can later fetch data from the database here if needed
     return render_template('tentativeStudyPlan.html')
+
 
 # ------------------ TEACHER HOME -----------------------
 @app.route('/teacher_home')
@@ -227,10 +225,8 @@ def teacher_home():
         courses=courses
     )
 
-# -------------------- ATTENDENCE ----------------
 
-from datetime import datetime
-
+# -------------------- ATTENDANCE ----------------
 @app.route('/student_attendance')
 def student_attendance():
     if 'user' not in session:
@@ -273,7 +269,6 @@ def student_attendance():
         if course_name not in attendance:
             attendance[course_name] = []
 
-        # Convert full words to single letters
         status = record['Attendance'].strip().lower()
         if status in ['present', 'p', '1']:
             short_status = 'P'
@@ -284,10 +279,9 @@ def student_attendance():
         else:
             short_status = '-'
 
-        # Format date (remove time)
         date_value = record['Date']
         if isinstance(date_value, str):
-            date_value = date_value.split(' ')[0]  # keeps only YYYY-MM-DD
+            date_value = date_value.split(' ')[0]
         elif isinstance(date_value, (datetime,)):
             date_value = date_value.date().isoformat()
 
@@ -296,7 +290,6 @@ def student_attendance():
             'Status': short_status
         })
 
-    # Step 4: Pass both courses & grouped attendance to HTML
     return render_template(
         'attendance_S.html',
         courses=courses,
@@ -304,6 +297,63 @@ def student_attendance():
     )
 
 
+# ------------------ STUDENT INBOX ----------------
+@app.route('/student_inbox')
+def student_inbox():
+    if 'user' not in session:
+        return redirect(url_for('student_login'))
+
+    sid = session['user']
+
+    conn = sqlite3.connect('flake.db')
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+
+    # --- Get student info ---
+    cur.execute("""
+        SELECT Roll_No, Name, Department, Section
+        FROM students
+        WHERE Roll_No = ?
+    """, (sid,))
+    student = cur.fetchone()
+    if not student:
+        conn.close()
+        flash("Student not found!", "danger")
+        return redirect(url_for('student_home'))
+
+    stu_name = student['Name']
+    stu_dept = student['Department']
+    stu_section = student['Section']
+
+    # --- Find teachers teaching student's dept & section ---
+    cur.execute("""
+        SELECT DISTINCT t.Teacher_ID, t.Name, t.Course_Name
+        FROM teachers t
+        JOIN courses c ON t.Course_Name = c.Course_Name
+        WHERE c.Department = ? AND c.Section = ?
+    """, (stu_dept, stu_section))
+    teachers = cur.fetchall()
+
+    # --- Build inbox contact list ---
+    contacts = []
+    for t in teachers:
+        contacts.append({
+            'id': t['Teacher_ID'],
+            'name': t['Name'],
+            'course': t['Course_Name'],
+            'last_msg': 'No messages yet',
+            'last_time': '',
+            'unread': 0
+        })
+
+    conn.close()
+
+    return render_template(
+        'inbox_S.html',
+        user=sid,
+        user_name=stu_name,
+        contacts=contacts
+    )
 
 
 # ------------------ RUN SERVER ------------------
