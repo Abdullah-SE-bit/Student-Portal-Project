@@ -311,27 +311,33 @@ def student_inbox():
 
     # --- Get student info ---
     cur.execute("""
-        SELECT Roll_No, Name, Department, Section
+        SELECT Roll_No, Name
         FROM students
         WHERE Roll_No = ?
     """, (sid,))
     student = cur.fetchone()
+
     if not student:
         conn.close()
         flash("Student not found!", "danger")
         return redirect(url_for('student_home'))
 
     stu_name = student['Name']
-    stu_dept = student['Department']
-    stu_section = student['Section']
+    roll_no = student['Roll_No']
+
+    # --- Extract Department and Section from Roll_No ---
+    # Example: M-22_SE-A-3001 -> dept='SE', section='A'
+    parts = roll_no.split('-')
+    stu_dept = parts[2] if len(parts) > 2 else None
+    stu_section = parts[3] if len(parts) > 3 else None
 
     # --- Find teachers teaching student's dept & section ---
     cur.execute("""
         SELECT DISTINCT t.Teacher_ID, t.Name, t.Course_Name
         FROM teachers t
-        JOIN courses c ON t.Course_Name = c.Course_Name
-        WHERE c.Department = ? AND c.Section = ?
-    """, (stu_dept, stu_section))
+        WHERE t.Department = ?
+    """, (stu_dept,))
+
     teachers = cur.fetchall()
 
     # --- Build inbox contact list ---
@@ -354,6 +360,7 @@ def student_inbox():
         user_name=stu_name,
         contacts=contacts
     )
+
 
 
 # ------------------ RUN SERVER ------------------
