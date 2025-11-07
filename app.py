@@ -328,98 +328,59 @@ def student_inbox():
     stu_name = student['Name']
     roll_no = student['Roll_No']
 
-    # --- Extract Department and Batch from Roll_No ---
-    # Example: M-22_SE-A-3001 -> parts = ['M', '22_SE', 'A', '3001'] OR if your format uses underscores differently:
-    # attempt robust parsing: find the part that contains department (like 'SE') and the batch (two-digit year)
+    # --- Extract Department from Roll_No ---
     parts = roll_no.split('-')
-
-    # Try to get batch (the commonly second hyphen-part contains batch or batch may be embedded)
-    # The earlier format you use: M-22_SE-A-3001  -> parts[1] is "22_SE"
-    batch = None
     dept = None
-    section = None
 
     if len(parts) >= 2:
-        # parts[1] may contain "22_SE" or "22" — handle both
         p1 = parts[1]
-        # if there's an underscore, split
         if '_' in p1:
             sub = p1.split('_')
-            # expect sub like ['22', 'SE']
-            if len(sub) >= 1:
-                batch = sub[0]
             if len(sub) >= 2:
                 dept = sub[1]
         else:
-            # no underscore: maybe batch alone, next part contains dept
-            batch = p1
             if len(parts) >= 3:
-                # parts[2] could be "SE" or "SE-A" — try to extract dept
                 if '_' in parts[2]:
                     dept = parts[2].split('_')[0]
                 else:
-                    # if parts[2] like "SE" or "SE-A" (take letters before non-letters)
                     dept = ''.join([ch for ch in parts[2] if ch.isalpha()])
 
-    # fallback: if still not found try to locate a two-digit batch and an uppercase dept token anywhere
-    if not batch or not dept:
+    # Fallback
+    if not dept:
         tokens = re.split(r'[_\-]', roll_no)
         for t in tokens:
-            if not batch and re.fullmatch(r'\d{2}', t):
-                batch = t
-            if not dept and re.fullmatch(r'[A-Za-z]{2,}', t):
-                # choose first alphabetic token that looks like dept
+            if re.fullmatch(r'[A-Za-z]{2,}', t):
                 dept = t
+                break
 
-    # section extraction (if exists in a part like 'A' or 'SE-A')
-    if len(parts) >= 3:
-        # look for single-letter section in parts
-        sec_candidate = parts[2]
-        if '-' in sec_candidate or '_' in sec_candidate:
-            # strip non-letters
-            section = ''.join([ch for ch in sec_candidate if ch.isalpha()])
-        else:
-            section = ''.join([ch for ch in sec_candidate if ch.isalpha()])
-
-    # Safety defaults
-    if not batch:
-        batch = ''   # will map to None later
     if not dept:
-        dept = ''    # empty dept => no teachers returned
+        dept = ''
 
-    # --- Map batch -> semester (your mapping) ---
-    batch_to_sem = {
-        '22': 7,
-        '23': 5,
-        '24': 3,
-        '25': 1
-    }
-    sem = batch_to_sem.get(batch, None)
+    # --- Get enrolled course codes for this student ---
+    cur.execute("""
+        SELECT Course_Code
+        FROM enrollments
+        WHERE Roll_No = ?
+    """, (sid,))
+    
+    enrolled_courses = [row['Course_Code'] for row in cur.fetchall()]
 
-    # If semester cannot be determined, show no teachers (or fallback to dept-only if desired)
-    if sem is None:
-        # optional: fallback to dept-only lookup. For now block and return empty contacts.
+    # --- If no enrollments, show no teachers ---
+    if not enrolled_courses:
         contacts = []
         conn.close()
         return render_template('inbox_S.html', user=sid, user_name=stu_name, contacts=contacts)
 
-    # --- Convert semester -> course-code digit ---
-    # special rule you gave: semester 1 is encoded as '0' in Course_Code; others use their number char
-    if sem == 1:
-        code_digit = '0'
-    else:
-        code_digit = str(sem)
-
-    # --- Query teachers filtered by department and course-code digit ---
-    # We'll find the character immediately after the hyphen in Course_Code and match it to code_digit
-    # Use SQLite substr + instr to extract the char after '-'
-    cur.execute("""
+    # --- Query teachers by enrolled course codes AND department ---
+    placeholders = ','.join(['?' for _ in enrolled_courses])
+    query = f"""
         SELECT DISTINCT t.Teacher_ID, t.Name, t.Course_Code, t.Course_Name
         FROM teachers t
-        WHERE t.Department = ?
-          AND substr(t.Course_Code, instr(t.Course_Code, '-') + 1, 1) = ?
-    """, (dept, code_digit))
-
+        WHERE t.Course_Code IN ({placeholders})
+          AND t.Department = ?
+    """
+    
+    cur.execute(query, tuple(enrolled_courses) + (dept,))
     teachers = cur.fetchall()
 
     # --- Build inbox contact list ---
@@ -444,6 +405,121 @@ def student_inbox():
         contacts=contacts
     )
 
+# ------------------- Teacher Inbox ---------------------------
+
+@app.route('/teacher_inbox')
+def teacher_inbox():
+    if 'user' not in session:
+        return redirect(url_for('teacher_login'))
+
+    tid = session['user']  # Teacher ID, e.g., T-M-SE-CS-1001
+
+    conn = sqlite3.connect('flake.db')
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+
+    # --- Get teacher info ---
+    cur.execute("""
+        SELECT Teacher_ID, Name, Department, Course_Code
+        FROM teachers
+        WHERE Teacher_ID = ?
+    """, (tid,))
+    teacher = cur.fetchone()
+
+    if not teacher:
+        conn.close()
+        flash("Teacher not found!", "danger")
+        return redirect(url_for('teacher_home'))
+
+    teacher_name = teacher['Name']
+    department = teacher['Department']
+    course_code = teacher['Course_Code']
+
+    # --- Get students enrolled in this teacher's course ---
+    cur.execute("""
+        SELECT DISTINCT e.Roll_No
+        FROM enrollments e
+        WHERE e.Course_Code = ?
+    """, (course_code,))
+    
+    enrolled_roll_nos = [row['Roll_No'] for row in cur.fetchall()]
+
+    # --- If no enrollments, show no students ---
+    if not enrolled_roll_nos:
+        contacts = []
+        conn.close()
+        return render_template('inbox_T.html', user=tid, user_name=teacher_name, contacts=contacts)
+
+    # --- Filter students by department (from Roll_No) and get their details ---
+    placeholders = ','.join(['?' for _ in enrolled_roll_nos])
+    query = f"""
+        SELECT Roll_No, Name
+        FROM students
+        WHERE Roll_No IN ({placeholders})
+    """
+    
+    cur.execute(query, tuple(enrolled_roll_nos))
+    students_raw = cur.fetchall()
+
+    # --- Build inbox contact list (filter by department) ---
+    contacts = []
+    for s in students_raw:
+        roll_no = s['Roll_No']
+        
+        # Extract department from Roll_No (e.g., M-22_SE-A-3001 -> SE)
+        parts = roll_no.split('-')
+        student_dept = None
+        
+        if len(parts) >= 2:
+            p1 = parts[1]
+            if '_' in p1:
+                sub = p1.split('_')
+                if len(sub) >= 2:
+                    student_dept = sub[1]
+            else:
+                if len(parts) >= 3:
+                    if '_' in parts[2]:
+                        student_dept = parts[2].split('_')[0]
+                    else:
+                        student_dept = ''.join([ch for ch in parts[2] if ch.isalpha()])
+        
+        # Fallback
+        if not student_dept:
+            tokens = re.split(r'[_\-]', roll_no)
+            for t in tokens:
+                if re.fullmatch(r'[A-Za-z]{2,}', t):
+                    student_dept = t
+                    break
+        
+        # Only add if department matches
+        if student_dept == department:
+            # Extract section (optional, for display)
+            section = ''
+            if len(parts) >= 3:
+                sec_candidate = parts[2]
+                if '_' in sec_candidate:
+                    section = sec_candidate.split('_')[0] if sec_candidate.split('_')[0].isalpha() else ''
+                else:
+                    section = ''.join([ch for ch in sec_candidate if ch.isalpha()])
+            
+            display_name = f"{s['Name']}" + (f" ({section})" if section else "")
+            
+            contacts.append({
+                'id': roll_no,
+                'name': display_name,
+                'last_msg': 'No messages yet',
+                'last_time': '',
+                'unread': 0
+            })
+
+    conn.close()
+
+    return render_template(
+        'inbox_T.html',
+        user=tid,
+        user_name=teacher_name,
+        contacts=contacts
+    )
 
 # ------------------- Course Registration ---------------------
 # Add these utility functions and routes to your app.py file
@@ -556,8 +632,8 @@ def semester_to_course_digit(semester):
 def course_registration():
     """
     Display course registration page with intelligent course offering:
-    1. First, offer courses for current semester where prerequisites are met
-    2. If prerequisite not met, offer the prerequisite course for retake
+    1. Show ALL courses for current semester (even if prerequisites not met)
+    2. If prerequisite not met, also offer the prerequisite course for retake
     3. Include failed courses that need to be retaken
     """
     if 'user' not in session:
@@ -582,20 +658,43 @@ def course_registration():
             return redirect(url_for('student_home'))
         
         # Extract batch and degree from Roll_No
-        student_info = extract_student_info(student_row['Roll_No'])
-        batch = student_info['batch']
-        degree_code = student_info['degree_code']
+        roll_no = student_row['Roll_No']
+        roll_parts = roll_no.split('-')
         
-        # Get current semester based on batch
-        current_semester = batch_to_semester(batch)
+        # Extract batch (e.g., from M-22_SE-A-3001, extract '22')
+        batch = None
+        if len(roll_parts) >= 2:
+            p1 = roll_parts[1]
+            if '_' in p1:
+                batch = p1.split('_')[0]
+            else:
+                batch = p1
+        
+        # Map batch to current semester
+        batch_to_sem = {
+            '22': 7,
+            '23': 5,
+            '24': 3,
+            '25': 1
+        }
+        current_semester = batch_to_sem.get(batch, None)
         
         if current_semester is None:
             conn.close()
             flash("Unable to determine your current semester", "danger")
             return redirect(url_for('student_home'))
         
-        # Convert semester to course code digit (following app.py logic)
-        code_digit = semester_to_course_digit(current_semester)
+        # Convert semester to course code digit
+        # Semester 1 → '0', all others → their number
+        if current_semester == 1:
+            code_digit = '0'
+        else:
+            code_digit = str(current_semester)
+        
+        # DEBUG: Print to console
+        print(f"\n{'='*60}")
+        print(f"🔍 DEBUG - Student: {sid}, Batch: {batch}, Semester: {current_semester}, Code Digit: {code_digit}")
+        print(f"{'='*60}")
         
         # Get all courses for this semester
         cur.execute("""
@@ -606,6 +705,10 @@ def course_registration():
         """, (code_digit,))
         
         current_sem_courses_raw = cur.fetchall()
+        
+        print(f"\n📚 Found {len(current_sem_courses_raw)} courses for semester {current_semester}:")
+        for c in current_sem_courses_raw:
+            print(f"  - {c['Course_Code']}: {c['Course_Name']} (Prereq: {c['Prerequisite'] or 'None'})")
         
         # Get enrolled courses for this student
         cur.execute("""
@@ -619,7 +722,10 @@ def course_registration():
         """, (sid,))
         passed = [row['Course_Code'] for row in cur.fetchall()]
         
-        # Now build the courses list with intelligent offering logic
+        print(f"\n✅ Passed courses: {passed}")
+        print(f"📝 Enrolled courses: {enrolled}")
+        
+        # Build the courses list - SHOW ALL COURSES
         courses_to_offer = []
         prerequisite_courses_to_retake = set()
         
@@ -630,42 +736,49 @@ def course_registration():
             # Check if student has passed the prerequisite
             prerequisite_met = (not prerequisite or prerequisite in passed)
             
-            if not prerequisite_met:
-                # Prerequisite NOT met - add the prerequisite course to retake list
-                if prerequisite:
-                    prerequisite_courses_to_retake.add(prerequisite)
+            # Extract semester info
+            code_parts = code.split('-')
+            sem_digit = code_parts[1][0] if len(code_parts) > 1 else '0'
+            
+            if sem_digit == '0':
+                semester = 1
             else:
-                # Prerequisite met - add this course to current semester offerings
-                code_parts = code.split('-')
-                sem_digit = code_parts[1][0] if len(code_parts) > 1 else '0'
-                
-                if sem_digit == '0':
-                    semester = 1
-                else:
-                    semester = int(sem_digit) if sem_digit.isdigit() else 1
-                
-                department = code_parts[0] if len(code_parts) > 0 else 'CS'
-                
-                courses_to_offer.append({
-                    'code': code,
-                    'name': c['Course_Name'],
-                    'credits': c['Credit_Hr'],
-                    'semester': semester,
-                    'prerequisite': prerequisite,
-                    'department': department,
-                    'type': 'current'  # Current semester course
-                })
+                semester = int(sem_digit) if sem_digit.isdigit() else 1
+            
+            department = code_parts[0] if len(code_parts) > 0 else 'CS'
+            
+            # ADD ALL CURRENT SEMESTER COURSES (show all, regardless of prerequisites)
+            courses_to_offer.append({
+                'code': code,
+                'name': c['Course_Name'],
+                'credits': c['Credit_Hr'],
+                'semester': semester,
+                'prerequisite': prerequisite,
+                'department': department,
+                'type': 'current'  # Current semester course
+            })
+            
+            # Track prerequisites that need retaking
+            if not prerequisite_met and prerequisite:
+                print(f"⚠️  {code} requires {prerequisite} which is not passed - adding {prerequisite} to retake list")
+                prerequisite_courses_to_retake.add(prerequisite)
         
-        # Now add prerequisite courses that need to be retaken
+        # Add prerequisite courses that need to be retaken
         if prerequisite_courses_to_retake:
-            cur.execute("""
+            print(f"\n🔄 Fetching {len(prerequisite_courses_to_retake)} prerequisite course(s) for retake:")
+            for prereq in prerequisite_courses_to_retake:
+                print(f"  - {prereq}")
+            
+            placeholders = ','.join(['?' for _ in prerequisite_courses_to_retake])
+            cur.execute(f"""
                 SELECT Course_Code, Course_Name, Credit_Hr, Prerequisite
                 FROM courses
-                WHERE Course_Code IN ({})
-            """.format(','.join(['?' for _ in prerequisite_courses_to_retake])),
-                tuple(prerequisite_courses_to_retake))
+                WHERE Course_Code IN ({placeholders})
+            """, tuple(prerequisite_courses_to_retake))
             
             prereq_courses_raw = cur.fetchall()
+            
+            print(f"\n📋 Found {len(prereq_courses_raw)} prerequisite course(s) in database:")
             
             for c in prereq_courses_raw:
                 code = c['Course_Code']
@@ -678,6 +791,8 @@ def course_registration():
                     semester = int(sem_digit) if sem_digit.isdigit() else 1
                 
                 department = code_parts[0] if len(code_parts) > 0 else 'CS'
+                
+                print(f"  ✓ Adding {code}: {c['Course_Name']} as RETAKE course")
                 
                 courses_to_offer.append({
                     'code': code,
@@ -694,6 +809,27 @@ def course_registration():
         # Sort: current semester courses first, then retake courses
         courses_sorted = sorted(courses_to_offer, key=lambda x: (x['type'] != 'current', x['code']))
         
+        print(f"\n🎯 FINAL OFFERING - Total courses: {len(courses_sorted)}")
+        print(f"  📅 Current semester courses: {len([c for c in courses_sorted if c['type'] == 'current'])}")
+        print(f"  ⚠️  Retake courses: {len([c for c in courses_sorted if c['type'] == 'retake'])}")
+        print(f"\nCourses being offered:")
+        for c in courses_sorted:
+            badge = "📅 CURRENT" if c['type'] == 'current' else "⚠️  RETAKE"
+            print(f"  {badge} | {c['code']}: {c['name']}")
+        print(f"{'='*60}\n")
+        
+        # Extract degree info for template
+        degree_code = None
+        if len(roll_parts) >= 2:
+            p1 = roll_parts[1]
+            if '_' in p1:
+                degree_code = p1.split('_')[1] if len(p1.split('_')) > 1 else None
+        
+        student_info = {
+            'batch': batch,
+            'degree_code': degree_code
+        }
+        
         return render_template(
             'course_registration.html',
             user=sid,
@@ -706,7 +842,9 @@ def course_registration():
         )
     
     except Exception as e:
-        print(f"Error loading course registration: {e}")
+        print(f"❌ Error loading course registration: {e}")
+        import traceback
+        traceback.print_exc()
         flash("Error loading course registration", "danger")
         return redirect(url_for('student_home'))
 
