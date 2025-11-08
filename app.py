@@ -1,8 +1,9 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 import sqlite3
 from datetime import datetime
 import re
-from flask_socketio import SocketIO
+from flask_socketio import SocketIO, emit, join_room
+
 def get_db():
     """Create a database connection with row factory for dictionary-like access"""
     conn = sqlite3.connect('flake.db')
@@ -72,24 +73,27 @@ def student_login():
 @app.route('/login_A.html', methods=['GET', 'POST'])
 def admin_login():
     if request.method == 'POST':
-        aid = request.form['admin_id']
-        password = request.form['password']
+        aid = request.form['admin_id'].strip()
+        password = request.form['password'].strip()
 
         conn = sqlite3.connect('flake.db')
+        conn.row_factory = sqlite3.Row
         cur = conn.cursor()
         cur.execute("SELECT * FROM admins WHERE admin_id=? AND password=?", (aid, password))
         admin = cur.fetchone()
         conn.close()
 
         if admin:
+            # Store admin ID and type in session
             session['user'] = aid
-            session['user'] = 'admin'  # ADD THIS LINE
-            session['admin_id'] = aid        # ADD THIS LINE
+            session['user_type'] = 'admin'
+
             return redirect(url_for('admin_dashboard'))
         else:
             flash("Invalid ID or Password", "danger")
 
     return render_template('login_A.html')
+
 
 
 @app.route('/teacher_dashboard')
@@ -538,10 +542,10 @@ def teacher_inbox():
         sections=sections
     )
 
-# ------------------- Teacher Inbox ---------------------------
+# ------------------- Admin Inbox ---------------------------
 
-@app.route('/admin_inbox')
-def admin_inbox():
+@app.route('/inbox_A')
+def inbox_A():
     if 'user' not in session:
         return redirect(url_for('admin_login'))
 
@@ -1314,6 +1318,86 @@ def admin_view_feedback():
                          selected_teacher=selected_teacher,
                          selected_course=selected_course,
                          stats=stats)
+
+# ========== MESSAGE HISTORY ==========
+@app.route('/messages/<receiver_id>', methods=['GET', 'POST'])
+def messages(receiver_id):
+    if 'user' not in session:
+        return jsonify([])
+
+    sender_id = session['user']
+    conn = sqlite3.connect('flake.db')
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+
+    if request.method == 'GET':
+        cur.execute("""
+            SELECT sender_id, receiver_id, message, timestamp
+            FROM messages
+            WHERE (sender_id = ? AND receiver_id = ?)
+               OR (sender_id = ? AND receiver_id = ?)
+            ORDER BY timestamp ASC
+        """, (sender_id, receiver_id, receiver_id, sender_id))
+        msgs = [dict(row) for row in cur.fetchall()]
+        conn.close()
+        return jsonify(msgs)
+
+    elif request.method == 'POST':
+        data = request.get_json()
+        message = data.get('text', '').strip()
+        if not message:
+            return jsonify({'status': 'error', 'message': 'Empty message'}), 400
+        sender_type = session.get('user_type', 'student')
+        receiver_type = data.get('receiver_type', 'teacher')
+
+        cur.execute("""
+            INSERT INTO messages (sender_type, sender_id, receiver_type, receiver_id, message, timestamp)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (sender_type, sender_id, receiver_type, receiver_id, message, datetime.utcnow()))
+        conn.commit()
+        conn.close()
+        return jsonify({'status': 'ok'})
+
+
+# ========== SOCKET.IO EVENTS ==========
+
+@socketio.on('join')
+def on_join(data):
+    user_id = data['user_id']
+    join_room(user_id)
+    print(f"{user_id} joined room")
+
+
+@socketio.on('private_message')
+def handle_send_message(data):
+    sender_id = session.get('user')
+    sender_type = data.get('user_type')
+    receiver_id = data.get('receiver_id')
+    receiver_type = data.get('receiver_type')
+    message = data.get('message', '').strip()
+
+    if not message:
+        return
+
+    conn = sqlite3.connect('flake.db')
+    cur = conn.cursor()
+    cur.execute("""
+        INSERT INTO messages (sender_type, sender_id, receiver_type, receiver_id, message, timestamp)
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, (sender_type, sender_id, receiver_type, receiver_id, message, datetime.utcnow()))
+    conn.commit()
+    conn.close()
+
+    msg_data = {
+        'sender_id': sender_id,
+        'receiver_id': receiver_id,
+        'message': message,
+        'timestamp': datetime.utcnow().isoformat()
+    }
+
+    emit('receive_message', msg_data, to=receiver_id)
+    emit('receive_message', msg_data, to=sender_id)  # echo to sender too
+
     
 # ------------------ RUN SERVER ------------------
 if __name__ == '__main__':

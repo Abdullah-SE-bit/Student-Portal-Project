@@ -110,7 +110,23 @@ def init_db():
         FOREIGN KEY (Teacher_ID) REFERENCES teachers(Teacher_ID)
     )
     ''')
+
+    cur.execute('''
+    CREATE TABLE IF NOT EXISTS messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        sender_type TEXT CHECK(sender_type IN ('student', 'teacher', 'admin')) NOT NULL,
+        sender_id TEXT NOT NULL,
+        receiver_type TEXT CHECK(receiver_type IN ('student', 'teacher', 'admin')) NOT NULL,
+        receiver_id TEXT NOT NULL,
+        message TEXT NOT NULL,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+        is_read INTEGER DEFAULT 0,
     
+        -- References (logical only, not enforced by FK to avoid schema break)
+        FOREIGN KEY (sender_id) REFERENCES students (Roll_No),
+        FOREIGN KEY (receiver_id) REFERENCES students (Roll_No)
+    )
+    ''')
 
 
     # ---- ADMIN DEFAULT ----
@@ -171,6 +187,20 @@ def init_db():
                         (r['Roll_No'], r['Name'], r['Date'], r['Course_Code'], r['Heading'], r['Total'], r['Obtained']))
             
     
+
+    cur.execute('''
+    CREATE TABLE IF NOT EXISTS messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sender_type TEXT CHECK(sender_type IN ('student', 'teacher', 'admin')) NOT NULL,
+    sender_id TEXT NOT NULL,
+    receiver_type TEXT CHECK(receiver_type IN ('student', 'teacher', 'admin')) NOT NULL,
+    receiver_id TEXT NOT NULL,
+    message TEXT NOT NULL,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    is_read INTEGER DEFAULT 0
+    )
+''')
+
 
     conn.commit()
     conn.close()
