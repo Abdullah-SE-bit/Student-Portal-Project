@@ -86,6 +86,7 @@
 </div>
 
 <script>
+    
     // Read data from HTML attributes (clean JavaScript)
     const appData = document.getElementById('appData');
     const allCourses = JSON.parse(appData.dataset.courses);
@@ -95,6 +96,16 @@
     const studentInfo = JSON.parse(appData.dataset.student);
     
     let selectedCourses = [...enrolledCourses];
+
+    // 🔍 DEBUG: Check what courses are received
+    console.log('=== DEBUG: COURSES DATA ===');
+    console.log('Total courses:', allCourses.length);
+    console.log('All courses:', allCourses);
+    
+    allCourses.forEach(course => {
+        console.log(`${course.type === 'retake' ? '⚠️ RETAKE' : '📅 CURRENT'} | ${course.code}: ${course.name}`);
+    });
+    console.log('===========================');
 
     // Initialize
     window.addEventListener('DOMContentLoaded', function() {
