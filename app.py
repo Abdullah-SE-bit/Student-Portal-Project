@@ -3,6 +3,11 @@ import sqlite3
 from datetime import datetime
 import re
 from flask_socketio import SocketIO
+def get_db():
+    """Create a database connection with row factory for dictionary-like access"""
+    conn = sqlite3.connect('flake.db')
+    conn.row_factory = sqlite3.Row  # This allows accessing columns by name
+    return conn
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
@@ -78,6 +83,8 @@ def admin_login():
 
         if admin:
             session['user'] = aid
+            session['user'] = 'admin'  # ADD THIS LINE
+            session['admin_id'] = aid        # ADD THIS LINE
             return redirect(url_for('admin_dashboard'))
         else:
             flash("Invalid ID or Password", "danger")
@@ -1011,6 +1018,302 @@ def register_courses():
     except Exception as e:
         print(f"Error registering courses: {e}")
         return {'success': False, 'error': 'Registration failed'}, 500
+    
+
+
+from datetime import datetime
+
+# ============ STUDENT FEEDBACK ROUTES ============
+
+@app.route('/student/feedback', methods=['GET'])
+def student_feedback_form():
+    """Display feedback form for students"""
+    if 'user' not in session:
+        flash('Please login as student', 'error')
+        return redirect(url_for('student_login'))
+    
+    roll_no = session['user']
+
+    conn = sqlite3.connect('flake.db')
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+
+    # Get student info
+    cur.execute("""
+        SELECT Roll_No, Name
+        FROM students
+        WHERE Roll_No = ?
+    """, (roll_no,))
+    student = cur.fetchone()
+
+    if not student:
+        conn.close()
+        flash("Student not found!", "danger")
+        return redirect(url_for('student_home'))
+
+    # ✅ Get enrolled courses even if teacher is not assigned
+    cur.execute("""
+        SELECT e.Course_Code, c.Course_Name, c.Credit_Hr,
+               t.Teacher_ID, t.Name AS Teacher_Name,
+               CASE 
+                    WHEN f.id IS NOT NULL THEN 'Feedback Submitted' 
+                    ELSE 'Submit Feedback' 
+               END AS Status
+        FROM enrollments e
+        JOIN courses c ON e.Course_Code = c.Course_Code
+        LEFT JOIN teacher_courses tc ON c.Course_Code = tc.Course_Code   -- changed
+        LEFT JOIN teachers t ON tc.Teacher_ID = t.Teacher_ID             -- changed
+        LEFT JOIN feedback f ON e.Roll_No = f.Roll_No AND e.Course_Code = f.Course_Code
+        WHERE e.Roll_No = ?
+    """, (roll_no,))
+    
+    courses = cur.fetchall()
+    conn.close()
+
+    return render_template('student_feedback_list.html', courses=courses)
+
+
+
+@app.route('/student/feedback/form/<course_code>', methods=['GET'])
+def student_feedback_form_detail(course_code):
+    """Display feedback form for a specific course"""
+    if 'user' not in session:
+        flash('Please login as student', 'error')
+        return redirect(url_for('student_login'))
+    
+    roll_no = session['user']
+    conn = get_db()
+
+    # Check if previously submitted
+    existing = conn.execute(
+        'SELECT id FROM feedback WHERE Roll_No = ? AND Course_Code = ?',
+        (roll_no, course_code)
+    ).fetchone()
+
+    if existing:
+        flash('You have already submitted feedback for this course', 'warning')
+        conn.close()
+        return redirect(url_for('student_feedback_form'))
+
+    # Get course + teacher info
+    course_info = conn.execute("""
+        SELECT c.Course_Code, c.Course_Name, 
+               t.Teacher_ID, t.Name AS Teacher_Name
+        FROM courses c
+        JOIN teacher_courses tc ON c.Course_Code = tc.Course_Code
+        JOIN teachers t ON tc.Teacher_ID = t.Teacher_ID
+        WHERE c.Course_Code = ?
+    """, (course_code,)).fetchone()
+
+    conn.close()
+
+    if not course_info:
+        flash("Course not found!", "danger")
+        return redirect(url_for('student_feedback_form'))
+    
+    return render_template('student_feedback_form.html', course=course_info)
+
+
+@app.route('/student/feedback/submit', methods=['POST'])
+def submit_feedback():
+    if 'user' not in session:
+        return redirect(url_for('student_login'))
+    
+    roll_no = session['user']
+    course_code = request.form.get('course_code')
+    teacher_id = request.form.get('teacher_id')
+
+    if not course_code or not teacher_id:
+        flash("Invalid submission. Missing course or teacher information.", "danger")
+        return redirect(url_for('student_feedback_form'))
+
+    # Ratings (1-5)
+    teaching_quality = request.form.get('teaching_quality')
+    course_content = request.form.get('course_content')
+    difficulty_level = request.form.get('difficulty_level')
+    teacher_rating = request.form.get('teacher_rating')
+
+    # MCQ fields
+    classroom_env = request.form.get('classroom_environment')
+    assessment = request.form.get('assessment_fairness')
+    resources = request.form.get('learning_resources')
+    organization = request.form.get('course_organization')
+
+    # Suggestions
+    suggestions = request.form.get('suggestions')
+
+    conn = get_db()
+
+    # Prevent duplicate
+    existing = conn.execute(
+        'SELECT id FROM feedback WHERE Roll_No = ? AND Course_Code = ?',
+        (roll_no, course_code)
+    ).fetchone()
+
+    if existing:
+        flash('You have already submitted feedback for this course', 'warning')
+        conn.close()
+        return redirect(url_for('student_feedback_form'))
+
+    conn.execute("""
+        INSERT INTO feedback (
+            Roll_No, Course_Code, Teacher_ID,
+            teaching_quality, course_content, difficulty_level, teacher_rating,
+            classroom_environment, assessment_fairness, learning_resources,
+            course_organization, suggestions, submitted_date
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        roll_no, course_code, teacher_id,
+        teaching_quality, course_content, difficulty_level, teacher_rating,
+        classroom_env, assessment, resources, organization,
+        suggestions, datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    ))
+
+    conn.commit()
+    conn.close()
+
+    flash('Feedback submitted successfully!', 'success')
+    return redirect(url_for('student_feedback_form'))
+
+
+
+# ============ TEACHER FEEDBACK ROUTES ============
+
+@app.route('/teacher/feedback', methods=['GET'])
+def teacher_view_feedback():
+    """Teachers view feedback for their courses only"""
+    if 'user' not in session:
+        flash('Please login as teacher', 'error')
+        return redirect(url_for('teacher_login'))
+    
+    teacher_id = session['Teacher_ID']
+    conn = get_db()
+    
+    # Get teacher's courses
+    courses = conn.execute('''
+        SELECT DISTINCT tc.Course_Code, c.Course_Name
+        FROM teacher_courses tc
+        JOIN courses c ON tc.Course_Code = c.Course_Code
+        WHERE tc.Teacher_ID = ?
+    ''', (teacher_id,)).fetchall()
+    
+    # Get feedback for selected course or all courses
+    selected_course = request.args.get('course_code', 'all')
+    
+    if selected_course == 'all':
+        feedbacks = conn.execute('''
+            SELECT f.*, c.Course_Name
+            FROM feedback f
+            JOIN courses c ON f.Course_Code = c.Course_Code
+            WHERE f.Teacher_ID = ?
+            ORDER BY f.submitted_date DESC
+        ''', (teacher_id,)).fetchall()
+    else:
+        feedbacks = conn.execute('''
+            SELECT f.*, c.Course_Name
+            FROM feedback f
+            JOIN courses c ON f.Course_Code = c.Course_Code
+            WHERE f.Teacher_ID = ? AND f.Course_Code = ?
+            ORDER BY f.submitted_date DESC
+        ''', (teacher_id, selected_course)).fetchall()
+    
+    # Calculate statistics
+    if selected_course == 'all':
+        stats = conn.execute('''
+            SELECT 
+                COUNT(*) as total_feedback,
+                AVG(teacher_rating) as avg_teacher_rating,
+                AVG(teaching_quality) as avg_teaching_quality,
+                AVG(course_content) as avg_course_content
+            FROM feedback
+            WHERE Teacher_ID = ?
+        ''', (teacher_id,)).fetchone()
+    else:
+        stats = conn.execute('''
+            SELECT 
+                COUNT(*) as total_feedback,
+                AVG(teacher_rating) as avg_teacher_rating,
+                AVG(teaching_quality) as avg_teaching_quality,
+                AVG(course_content) as avg_course_content
+            FROM feedback
+            WHERE Teacher_ID = ? AND Course_Code = ?
+        ''', (teacher_id, selected_course)).fetchone()
+    
+    conn.close()
+    return render_template('teacher_feedback_view.html', 
+                         courses=courses, 
+                         feedbacks=feedbacks, 
+                         selected_course=selected_course,
+                         stats=stats)
+
+# ============ ADMIN FEEDBACK ROUTES ============
+
+@app.route('/admin/feedback', methods=['GET'])
+def admin_view_feedback():
+    """Admin views all feedback with teacher/course filter"""
+    if 'user' not in session:
+        flash('Please login as admin', 'error')
+        return redirect(url_for('admin_login'))
+    
+    conn = get_db()
+    
+    # Get all teachers with their courses
+    teacher_courses = conn.execute('''
+        SELECT DISTINCT t.Teacher_ID, t.Name as Teacher_Name, 
+               tc.Course_Code, c.Course_Name
+        FROM teachers t
+        JOIN teacher_courses tc ON t.Teacher_ID = tc.Teacher_ID
+        JOIN courses c ON tc.Course_Code = c.Course_Code
+        ORDER BY t.Name, c.Course_Code
+    ''').fetchall()
+    
+    # Filter logic
+    selected_teacher = request.args.get('teacher_id', 'all')
+    selected_course = request.args.get('course_code', 'all')
+    
+    query = '''
+        SELECT f.*, c.Course_Name, t.Name as Teacher_Name
+        FROM feedback f
+        JOIN courses c ON f.Course_Code = c.Course_Code
+        JOIN teachers t ON f.Teacher_ID = t.Teacher_ID
+        WHERE 1=1
+    '''
+    params = []
+    
+    if selected_teacher != 'all':
+        query += ' AND f.Teacher_ID = ?'
+        params.append(selected_teacher)
+    
+    if selected_course != 'all':
+        query += ' AND f.Course_Code = ?'
+        params.append(selected_course)
+    
+    query += ' ORDER BY f.submitted_date DESC'
+    
+    feedbacks = conn.execute(query, params).fetchall()
+    
+    # Overall statistics
+    stats_query = 'SELECT COUNT(*) as total_feedback, AVG(teacher_rating) as avg_teacher_rating, AVG(teaching_quality) as avg_teaching_quality, COUNT(DISTINCT Teacher_ID) as teachers_count, COUNT(DISTINCT Course_Code) as courses_count FROM feedback WHERE 1=1'
+    stats_params = []
+    
+    if selected_teacher != 'all':
+        stats_query += ' AND Teacher_ID = ?'
+        stats_params.append(selected_teacher)
+    
+    if selected_course != 'all':
+        stats_query += ' AND Course_Code = ?'
+        stats_params.append(selected_course)
+    
+    stats = conn.execute(stats_query, stats_params).fetchone()
+    
+    conn.close()
+    return render_template('admin_feedback_view.html',
+                         teacher_courses=teacher_courses,
+                         feedbacks=feedbacks,
+                         selected_teacher=selected_teacher,
+                         selected_course=selected_course,
+                         stats=stats)
     
 # ------------------ RUN SERVER ------------------
 if __name__ == '__main__':
