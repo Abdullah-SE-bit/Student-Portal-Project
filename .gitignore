@@ -1,8 +1,14 @@
-# Ignore virtual environments
+﻿# Ignore virtual environment
 venv/
+
+# Ignore SQLite database
+*.db
+flake.db
+
+# Python cache
 __pycache__/
 *.pyc
 
-# Ignore IDE configs (optional)
+# IDE settings (optional)
 .vscode/
 .idea/
