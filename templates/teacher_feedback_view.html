@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+
+{% block title %}View Feedback - Teacher{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='feedback_styles.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <span style="color: #666;">Home</span> > <span style="color: #333;">Course Feedback</span>
+</div>
+
+<div class="page-header">
+    <h2>📊 Course Feedback</h2>
+    <p>View anonymous feedback from your students</p>
+</div>
+
+<!-- Statistics -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-label">Total Feedback</div>
+        <div class="stat-value">{{ stats.total_feedback or 0 }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Avg Teacher Rating</div>
+        <div class="stat-value">{{ "%.1f"|format(stats.avg_teacher_rating or 0) }} ⭐</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Avg Teaching Quality</div>
+        <div class="stat-value">{{ "%.1f"|format(stats.avg_teaching_quality or 0) }} ⭐</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Avg Course Content</div>
+        <div class="stat-value">{{ "%.1f"|format(stats.avg_course_content or 0) }} ⭐</div>
+    </div>
+</div>
+
+<!-- Filter -->
+<div class="filter-section">
+    <form method="GET" action="{{ url_for('teacher_view_feedback') }}">
+        <div class="filter-group">
+            <select name="course_code" onchange="this.form.submit()">
+                <option value="all" {% if selected_course == 'all' %}selected{% endif %}>All Courses</option>
+                {% for course in courses %}
+                    <option value="{{ course.Course_Code }}" 
+                            {% if selected_course == course.Course_Code %}selected{% endif %}>
+                        {{ course.Course_Code }} - {{ course.Course_Name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+    </form>
+</div>
+
+<!-- Feedback List -->
+<div>
+    {% if feedbacks %}
+        {% for fb in feedbacks %}
+        <div class="feedback-card">
+            <div class="feedback-header">
+                <div class="feedback-course-name">{{ fb.Course_Name }} ({{ fb.Course_Code }})</div>
+                <div class="feedback-date">📅 {{ fb.submitted_date }}</div>
+            </div>
+            
+            <div class="ratings-grid">
+                <div class="rating-item">
+                    <span class="rating-item-label">Teaching Quality:</span>
+                    <span class="stars-display">
+                        {% for i in range(fb.teaching_quality) %}★{% endfor %}
+                        {% for i in range(5 - fb.teaching_quality) %}☆{% endfor %}
+                    </span>
+                </div>
+                <div class="rating-item">
+                    <span class="rating-item-label">Course Content:</span>
+                    <span class="stars-display">
+                        {% for i in range(fb.course_content) %}★{% endfor %}
+                        {% for i in range(5 - fb.course_content) %}☆{% endfor %}
+                    </span>
+                </div>
+                <div class="rating-item">
+                    <span class="rating-item-label">Difficulty Level:</span>
+                    <span class="stars-display">
+                        {% for i in range(fb.difficulty_level) %}★{% endfor %}
+                        {% for i in range(5 - fb.difficulty_level) %}☆{% endfor %}
+                    </span>
+                </div>
+                <div class="rating-item">
+                    <span class="rating-item-label">Teacher Rating:</span>
+                    <span class="stars-display">
+                        {% for i in range(fb.teacher_rating) %}★{% endfor %}
+                        {% for i in range(5 - fb.teacher_rating) %}☆{% endfor %}
+                    </span>
+                </div>
+            </div>
+            
+            <div class="mcq-results">
+                <div class="mcq-results-title">📊 Detailed Ratings:</div>
+                <div class="mcq-results-grid">
+                    <div class="mcq-result-item">
+                        <span>Classroom Environment:</span>
+                        <span class="mcq-value {{ fb.classroom_environment|lower }}">{{ fb.classroom_environment }}</span>
+                    </div>
+                    <div class="mcq-result-item">
+                        <span>Assessment Fairness:</span>
+                        <span class="mcq-value {{ fb.assessment_fairness|lower }}">{{ fb.assessment_fairness }}</span>
+                    </div>
+                    <div class="mcq-result-item">
+                        <span>Learning Resources:</span>
+                        <span class="mcq-value {{ fb.learning_resources|lower }}">{{ fb.learning_resources }}</span>
+                    </div>
+                    <div class="mcq-result-item">
+                        <span>Course Organization:</span>
+                        <span class="mcq-value {{ fb.course_organization|lower }}">{{ fb.course_organization }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            {% if fb.suggestions %}
+            <div class="suggestions-box">
+                <div class="suggestions-title">💬 Student Suggestions:</div>
+                <div class="suggestions-text">"{{ fb.suggestions }}"</div>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="no-feedback">
+            <div class="no-feedback-icon">📭</div>
+            <h2>No Feedback Yet</h2>
+            <p>Students haven't submitted any feedback for the selected course.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

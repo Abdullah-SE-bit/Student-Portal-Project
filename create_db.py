@@ -89,6 +89,30 @@ def init_db():
         FOREIGN KEY (Course_Code) REFERENCES courses (Course_Code)
     )''')
 
+    cur.execute('''
+    CREATE TABLE IF NOT EXISTS feedback (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        Roll_No TEXT,
+        Course_Code TEXT,
+        Teacher_ID TEXT,
+        teaching_quality INTEGER,
+        course_content INTEGER,
+        difficulty_level INTEGER,
+        teacher_rating INTEGER,
+        classroom_environment TEXT,
+        assessment_fairness TEXT,
+        learning_resources TEXT,
+        course_organization TEXT,
+        suggestions TEXT,
+        submitted_date TEXT,
+        FOREIGN KEY (Roll_No) REFERENCES students(Roll_No),
+        FOREIGN KEY (Course_Code) REFERENCES courses(Course_Code),
+        FOREIGN KEY (Teacher_ID) REFERENCES teachers(Teacher_ID)
+    )
+    ''')
+    
+
+
     # ---- ADMIN DEFAULT ----
     admin_id = "A123"
     cur.execute("INSERT OR IGNORE INTO admins (admin_id, password) VALUES (?, ?)", (admin_id, admin_id))
@@ -113,6 +137,7 @@ def init_db():
                 r['Current_Address'], r['Permanent_Address'], r['Home_Phone'], r['Postal_Code'],
                 r['Department'], r['Course_Code'], r['Course_Name']
             ))
+
 
 
     if os.path.exists(os.path.join(data_path, "courses.xlsx")):
@@ -144,6 +169,8 @@ def init_db():
         for _, r in df.iterrows():
             cur.execute("INSERT OR IGNORE INTO marks VALUES (?, ?, ?, ?, ?, ?, ?)",
                         (r['Roll_No'], r['Name'], r['Date'], r['Course_Code'], r['Heading'], r['Total'], r['Obtained']))
+            
+    
 
     conn.commit()
     conn.close()

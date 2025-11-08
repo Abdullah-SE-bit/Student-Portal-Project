@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='portal_template.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='feedback_styles.css') }}" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}" />
+    <title>Course Feedback</title>
+  </head>
+
+  <body>
+    <header>
+      <button class="left-btn" id="menuToggle">&#9776;</button>
+      <h1 class="portal-title"><b>Student Portal</b></h1>
+      <div class="user-info">
+        <span>Welcome, {{ session.get('user_name', 'Student') }}</span>
+        <button class="options-btn" id="optionsToggle">&#8942;</button>
+        <div class="dropdown" id="optionsMenu">
+          <a href="#"><i class="fa-solid fa-pen-to-square"></i> Change Password</a>
+          <a href="{{ url_for('logout') }}"><i class="fa-solid fa-power-off"></i> Logout</a>
+        </div>
+      </div>
+    </header>
+
+    <div class="side-panel" id="sidePanel">
+      <button class="inside-btn" id="insideMenuToggle">&#9776;</button>
+      <a href="{{ url_for('student_home') }}"><i class="fa-solid fa-house"></i> Home</a>
+      <a href="{{ url_for('course_registration') }}"><i class="fa-solid fa-file-lines"></i> Course Registration</a>
+      <a href="{{ url_for('student_attendance') }}"><i class="fa-solid fa-list-check"></i> Attendance</a>
+      <a href="#"><i class="fa-solid fa-list-check"></i> Marks</a>
+      <a href="#"><i class="fa-solid fa-file-lines"></i> Print Admit Card</a>
+      <a href="#"><i class="fa-solid fa-file-lines"></i> Transcript</a>
+      <a href="#"><i class="fa-solid fa-coins"></i> Fee Details</a>
+      <a href="{{ url_for('student_feedback_form') }}"><i class="fa-solid fa-list-check"></i> Feedback</a>
+      <a href="{{ url_for('student_inbox') }}"><i class="fa-solid fa-inbox"></i> Inbox</a>
+      <a href="#"><i class="fa-solid fa-bullhorn"></i> Announcements</a>
+      <a href="{{ url_for('student_study_plan') }}"><i class="fa-solid fa-calendar-days"></i> Tentative Study Plan</a>
+      <a href="#"><i class="fa-solid fa-clock"></i> Timetable</a>
+    </div>
+
+    <main>
+      <div class="breadcrumb">
+        <span style="color: #666;">Home</span> > <span style="color: #333;">Course Feedback</span>
+      </div>
+
+      <div class="page-header">
+        <h2>Course Feedback</h2>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">
+              {{ message }}
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>S.No</th>
+              <th>Code</th>
+              <th>Course Name</th>
+              <th style="text-align: center;">Credits</th>
+              <th style="text-align: center;">Status</th>
+              <th style="text-align: center;">Feedback</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if courses %}
+              {% for course in courses %}
+              <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ course.Course_Code }}</td>
+                <td>{{ course.Course_Name }}</td>
+                <td style="text-align: center;">{{ course.Credit_Hr }}</td>
+                <td style="text-align: center;">
+                  {% if course.Status == 'Feedback Submitted' %}
+                    <span class="status-submitted">{{ course.Status }}</span>
+                  {% else %}
+                    <span class="status-pending">{{ course.Status }}</span>
+                  {% endif %}
+                </td>
+                <td style="text-align: center;">
+                  {% if course.Status != 'Feedback Submitted' %}
+                    <a href="{{ url_for('student_feedback_form_detail', course_code=course.Course_Code) }}" class="btn btn-primary">Submit Feedback</a>
+                  {% else %}
+                    <span class="text-success">Feedback Submitted</span>
+                 {% endif %}
+
+                </td>
+              </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td colspan="6" style="padding: 40px; text-align: center; color: #999;">
+                  No courses available for feedback
+                </td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </main>
+
+    <script>
+      const optionsToggle = document.getElementById('optionsToggle');
+      const optionsMenu = document.getElementById('optionsMenu');
+      optionsToggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        optionsMenu.style.display = optionsMenu.style.display === 'block' ? 'none' : 'block';
+      });
+      window.addEventListener('click', (e) => {
+        if (!optionsToggle.contains(e.target) && !optionsMenu.contains(e.target)) {
+          optionsMenu.style.display = 'none';
+        }
+      });
+
+      const menuToggle = document.getElementById('menuToggle');
+      const insideMenuToggle = document.getElementById('insideMenuToggle');
+      const sidePanel = document.getElementById('sidePanel');
+      function togglePanel(e) {
+        e.stopPropagation();
+        sidePanel.classList.toggle('open');
+      }
+      menuToggle.addEventListener('click', togglePanel);
+      insideMenuToggle.addEventListener('click', togglePanel);
+      window.addEventListener('click', (e) => {
+        if (!sidePanel.contains(e.target) && !menuToggle.contains(e.target)) {
+          sidePanel.classList.remove('open');
+        }
+      });
+    </script>
+  </body>
+</html>

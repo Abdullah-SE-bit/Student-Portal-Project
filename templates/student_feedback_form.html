@@ -1,0 +1,263 @@
+{% extends 'student_dashboard.html' %}
+
+{% block title %}Submit Feedback{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='feedback_styles.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="{{ url_for('student_feedback_form') }}">Course Feedback</a> > <span style="color: #333;">Submit Feedback</span>
+</div>
+
+<div class="page-header">
+    <h2>📝 Submit Course Feedback</h2>
+    <p>{{ course.Course_Code }} - {{ course.Course_Name }}</p>
+</div>
+
+<div class="anonymous-note">
+    <strong>🔒 Anonymous Feedback:</strong> Your Roll Number will be kept confidential and will not be displayed to teachers.
+</div>
+
+<form id="feedbackForm" action="{{ url_for('submit_feedback') }}" method="POST">
+
+    <input type="hidden" name="course_code" value="{{ course.Course_Code }}">
+    <input type="hidden" name="teacher_id" value="{{ course.Teacher_ID }}">
+
+
+    
+    <!-- Course Info -->
+    <div class="course-info-box">
+        <div class="course-info-grid">
+            <div>
+                <label class="course-info-label">Course Code</label>
+                <div class="course-info-value">{{ course.Course_Code }}</div>
+            </div>
+            <div>
+                <label class="course-info-label">Teacher</label>
+                <div class="course-info-value">{{ course.Teacher_Name }}</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Rating Section -->
+    <div class="rating-section">
+        <h3>⭐ Rate Your Experience (1-5 Stars)</h3>
+        
+        <div class="rating-group">
+            <span class="rating-label">Teaching Quality</span>
+            <div class="stars" data-rating="teaching_quality">
+                <span class="star" data-value="1">★</span>
+                <span class="star" data-value="2">★</span>
+                <span class="star" data-value="3">★</span>
+                <span class="star" data-value="4">★</span>
+                <span class="star" data-value="5">★</span>
+            </div>
+            <input type="hidden" name="teaching_quality" required>
+        </div>
+        
+        <div class="rating-group">
+            <span class="rating-label">Course Content</span>
+            <div class="stars" data-rating="course_content">
+                <span class="star" data-value="1">★</span>
+                <span class="star" data-value="2">★</span>
+                <span class="star" data-value="3">★</span>
+                <span class="star" data-value="4">★</span>
+                <span class="star" data-value="5">★</span>
+            </div>
+            <input type="hidden" name="course_content" required>
+        </div>
+        
+        <div class="rating-group">
+            <span class="rating-label">Difficulty Level</span>
+            <div class="stars" data-rating="difficulty_level">
+                <span class="star" data-value="1">★</span>
+                <span class="star" data-value="2">★</span>
+                <span class="star" data-value="3">★</span>
+                <span class="star" data-value="4">★</span>
+                <span class="star" data-value="5">★</span>
+            </div>
+            <input type="hidden" name="difficulty_level" required>
+        </div>
+        
+        <div class="rating-group">
+            <span class="rating-label">Teacher's Teaching</span>
+            <div class="stars" data-rating="teacher_rating">
+                <span class="star" data-value="1">★</span>
+                <span class="star" data-value="2">★</span>
+                <span class="star" data-value="3">★</span>
+                <span class="star" data-value="4">★</span>
+                <span class="star" data-value="5">★</span>
+            </div>
+            <input type="hidden" name="teacher_rating" required>
+        </div>
+    </div>
+    
+    <!-- MCQ Section -->
+    <div class="mcq-section">
+        <h3>📊 Please Rate the Following</h3>
+        
+        <div class="form-group">
+            <label>Classroom Environment</label>
+            <div class="mcq-options">
+                <div class="mcq-option">
+                    <input type="radio" name="classroom_environment" value="Poor" id="class_poor" required>
+                    <label for="class_poor">Poor</label>
+                </div>
+                <div class="mcq-option">
+                    <input type="radio" name="classroom_environment" value="Fair" id="class_fair">
+                    <label for="class_fair">Fair</label>
+                </div>
+                <div class="mcq-option">
+                    <input type="radio" name="classroom_environment" value="Good" id="class_good">
+                    <label for="class_good">Good</label>
+                </div>
+                <div class="mcq-option">
+                    <input type="radio" name="classroom_environment" value="Excellent" id="class_excellent">
+                    <label for="class_excellent">Excellent</label>
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label>Assessment Fairness</label>
+            <div class="mcq-options">
+                <div class="mcq-option">
+                    <input type="radio" name="assessment_fairness" value="Poor" id="assess_poor" required>
+                    <label for="assess_poor">Poor</label>
+                </div>
+                <div class="mcq-option">
+                    <input type="radio" name="assessment_fairness" value="Fair" id="assess_fair">
+                    <label for="assess_fair">Fair</label>
+                </div>
+                <div class="mcq-option">
+                    <input type="radio" name="assessment_fairness" value="Good" id="assess_good">
+                    <label for="assess_good">Good</label>
+                </div>
+                <div class="mcq-option">
+                    <input type="radio" name="assessment_fairness" value="Excellent" id="assess_excellent">
+                    <label for="assess_excellent">Excellent</label>
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label>Learning Resources</label>
+            <div class="mcq-options">
+                <div class="mcq-option">
+                    <input type="radio" name="learning_resources" value="Poor" id="resource_poor" required>
+                    <label for="resource_poor">Poor</label>
+                </div>
+                <div class="mcq-option">
+                    <input type="radio" name="learning_resources" value="Fair" id="resource_fair">
+                    <label for="resource_fair">Fair</label>
+                </div>
+                <div class="mcq-option">
+                    <input type="radio" name="learning_resources" value="Good" id="resource_good">
+                    <label for="resource_good">Good</label>
+                </div>
+                <div class="mcq-option">
+                    <input type="radio" name="learning_resources" value="Excellent" id="resource_excellent">
+                    <label for="resource_excellent">Excellent</label>
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label>Course Organization</label>
+            <div class="mcq-options">
+                <div class="mcq-option">
+                    <input type="radio" name="course_organization" value="Poor" id="org_poor" required>
+                    <label for="org_poor">Poor</label>
+                </div>
+                <div class="mcq-option">
+                    <input type="radio" name="course_organization" value="Fair" id="org_fair">
+                    <label for="org_fair">Fair</label>
+                </div>
+                <div class="mcq-option">
+                    <input type="radio" name="course_organization" value="Good" id="org_good">
+                    <label for="org_good">Good</label>
+                </div>
+                <div class="mcq-option">
+                    <input type="radio" name="course_organization" value="Excellent" id="org_excellent">
+                    <label for="org_excellent">Excellent</label>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Suggestions -->
+    <div class="form-group">
+        <label for="suggestions">Additional Suggestions (Optional)</label>
+        <textarea name="suggestions" id="suggestions" placeholder="Share your thoughts, suggestions, or concerns..."></textarea>
+    </div>
+    
+    <div class="button-container">
+        <button type="submit" class="btn-primary btn-large">Submit Feedback</button>
+        <a href="{{ url_for('student_feedback_form') }}" class="btn-secondary">Cancel</a>
+    </div>
+</form>
+
+<script>
+    // Star rating functionality
+    document.querySelectorAll('.stars').forEach(starsContainer => {
+        const stars = starsContainer.querySelectorAll('.star');
+        const ratingName = starsContainer.dataset.rating;
+        const hiddenInput = document.querySelector(`input[name="${ratingName}"]`);
+        
+        stars.forEach((star, index) => {
+            star.addEventListener('click', () => {
+                const value = star.dataset.value;
+                hiddenInput.value = value;
+                
+                stars.forEach((s, i) => {
+                    if (i < index + 1) {
+                        s.classList.add('active');
+                    } else {
+                        s.classList.remove('active');
+                    }
+                });
+            });
+            
+            star.addEventListener('mouseenter', () => {
+                stars.forEach((s, i) => {
+                    if (i <= index) {
+                        s.style.color = '#FFC107';
+                    } else {
+                        s.style.color = '#DDD';
+                    }
+                });
+            });
+        });
+        
+        starsContainer.addEventListener('mouseleave', () => {
+            const currentValue = hiddenInput.value;
+            stars.forEach((s, i) => {
+                if (i < currentValue) {
+                    s.style.color = '#FFC107';
+                } else {
+                    s.style.color = '#DDD';
+                }
+            });
+        });
+    });
+    
+    // Form validation
+    document.getElementById('feedbackForm').addEventListener('submit', (e) => {
+        const ratings = ['teaching_quality', 'course_content', 'difficulty_level', 'teacher_rating'];
+        let allRated = true;
+        
+        ratings.forEach(rating => {
+            if (!document.querySelector(`input[name="${rating}"]`).value) {
+                allRated = false;
+            }
+        });
+        
+        if (!allRated) {
+            e.preventDefault();
+            alert('Please provide all star ratings before submitting.');
+        }
+    });
+</script>
+{% endblock %}

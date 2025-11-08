@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='portal_template.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='feedback_styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <title>Admin Feedback Dashboard</title>
+  </head>
+
+  <body>
+    <header>
+      <button class="left-btn" id="menuToggle">&#9776;</button>
+
+      <h1 class="portal-title"><b>Admin Portal</b></h1>
+
+      <div class="user-info">
+        <span>{{ session.get('user', 'Admin') }}</span>
+        <button class="options-btn" id="optionsToggle">&#8942;</button>
+        <div class="dropdown" id="optionsMenu">
+          <a href="#"><i class="fa-solid fa-pen-to-square"></i> Change Password</a>
+          <a href="{{ url_for('logout') }}"><i class="fa-solid fa-power-off"></i> Logout</a>
+        </div>
+      </div>
+    </header>
+
+    <div class="side-panel" id="sidePanel">
+      <button class="left-btn inside-btn" id="closePanel">&#9776;</button>
+      <button class="inside-btn" id="insideMenuToggle">&#9776;</button>
+
+      <a href="{{ url_for('admin_dashboard') }}"><i class="fa-solid fa-house"></i> Home</a>
+      <a href="#"><i class="fa-solid fa-inbox"></i> Inbox</a>
+      <a href="#"><i class="fa-solid fa-book"></i> Teacher Courses List</a>
+      <a href="#"><i class="fa-solid fa-building-columns"></i> Student Dept. List</a>
+      <a href="#"><i class="fa-solid fa-book-open-reader"></i> Student Courses List</a>
+      <a href="#"><i class="fa-solid fa-bullhorn"></i> Announcements</a>
+      <a href="{{ url_for('admin_view_feedback') }}"><i class="fa-solid fa-comments"></i> Feedback</a>
+    </div>
+
+    <main>
+      <div class="breadcrumb">
+        <span style="color: #666;">Home</span> > <span style="color: #333;">Admin Feedback Dashboard</span>
+      </div>
+
+      <div class="page-header">
+        <h2>🎯 Admin Feedback Dashboard</h2>
+        <p>Monitor and analyze all course feedback across the institution</p>
+      </div>
+
+      <!-- Overall Statistics -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Total Feedback</div>
+          <div class="stat-value">{{ stats.total_feedback or 0 }}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Avg Teacher Rating</div>
+          <div class="stat-value">{{ "%.1f"|format(stats.avg_teacher_rating or 0) }} ⭐</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Avg Teaching Quality</div>
+          <div class="stat-value">{{ "%.1f"|format(stats.avg_teaching_quality or 0) }} ⭐</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Teachers Evaluated</div>
+          <div class="stat-value">{{ stats.teachers_count or 0 }}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Courses Evaluated</div>
+          <div class="stat-value">{{ stats.courses_count or 0 }}</div>
+        </div>
+      </div>
+
+      <!-- Filter Section -->
+      <div class="filter-section">
+        <h3 style="margin-bottom: 15px; color: #333;">🔍 Filter Feedback</h3>
+        <form method="GET" action="{{ url_for('admin_view_feedback') }}">
+          <div class="filter-grid">
+            <select name="teacher_id" id="teacher_select" onchange="updateCourseFilter()">
+              <option value="all">All Teachers</option>
+              {% set current_teacher = "" %}
+              {% for tc in teacher_courses %}
+                {% if tc.Teacher_ID != current_teacher %}
+                  <option value="{{ tc.Teacher_ID }}" 
+                          {% if selected_teacher == tc.Teacher_ID %}selected{% endif %}>
+                      {{ tc.Teacher_Name }} ({{ tc.Teacher_ID }})
+                  </option>
+                  {% set current_teacher = tc.Teacher_ID %}
+                {% endif %}
+              {% endfor %}
+            </select>
+            
+            <select name="course_code" id="course_select">
+              <option value="all">All Courses</option>
+              {% for tc in teacher_courses %}
+                <option value="{{ tc.Course_Code }}" 
+                        data-teacher="{{ tc.Teacher_ID }}"
+                        {% if selected_course == tc.Course_Code %}selected{% endif %}>
+                    {{ tc.Course_Code }} - {{ tc.Course_Name }}
+                </option>
+              {% endfor %}
+            </select>
+            
+            <button type="submit" class="btn-primary">Apply Filter</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Teacher-Course Reference -->
+      <div class="filter-section">
+        <h3 style="margin-bottom: 15px; color: #333;">📚 Teacher-Course Reference</h3>
+        <div class="teacher-course-reference">
+          {% set current_teacher = "" %}
+          {% for tc in teacher_courses %}
+            {% if tc.Teacher_ID != current_teacher %}
+              {% if current_teacher != "" %}</div>{% endif %}
+              <div style="margin-bottom: 15px;">
+                <strong>{{ tc.Teacher_Name }}:</strong>
+                {% set current_teacher = tc.Teacher_ID %}
+            {% endif %}
+            <span class="course-tag">{{ tc.Course_Code }}</span>
+          {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Feedback List -->
+      <div>
+        {% if feedbacks %}
+          {% for fb in feedbacks %}
+          <div class="feedback-card">
+            <div class="feedback-header" style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 15px;">
+              <div class="teacher-info">
+                <div class="teacher-name">👨‍🏫 {{ fb.Teacher_Name }}</div>
+                <div style="font-size: 0.85em; color: #666; margin-top: 3px;">ID: {{ fb.Teacher_ID }}</div>
+              </div>
+              <div class="course-badge">{{ fb.Course_Code }}<br>{{ fb.Course_Name }}</div>
+              <div class="feedback-date" style="text-align: right;">📅 {{ fb.submitted_date }}</div>
+            </div>
+            
+            <div class="ratings-grid">
+              <div class="rating-item">
+                <span class="rating-item-label">Teaching Quality:</span>
+                <span class="stars-display">
+                  {% for i in range(fb.teaching_quality) %}★{% endfor %}
+                  {% for i in range(5 - fb.teaching_quality) %}☆{% endfor %}
+                </span>
+              </div>
+              <div class="rating-item">
+                <span class="rating-item-label">Course Content:</span>
+                <span class="stars-display">
+                  {% for i in range(fb.course_content) %}★{% endfor %}
+                  {% for i in range(5 - fb.course_content) %}☆{% endfor %}
+                </span>
+              </div>
+              <div class="rating-item">
+                <span class="rating-item-label">Difficulty Level:</span>
+                <span class="stars-display">
+                  {% for i in range(fb.difficulty_level) %}★{% endfor %}
+                  {% for i in range(5 - fb.difficulty_level) %}☆{% endfor %}
+                </span>
+              </div>
+              <div class="rating-item">
+                <span class="rating-item-label">Teacher Rating:</span>
+                <span class="stars-display">
+                  {% for i in range(fb.teacher_rating) %}★{% endfor %}
+                  {% for i in range(5 - fb.teacher_rating) %}☆{% endfor %}
+                </span>
+              </div>
+            </div>
+            
+            <div class="mcq-results">
+              <div class="mcq-results-title">📊 Detailed Ratings:</div>
+              <div class="mcq-results-grid">
+                <div class="mcq-result-item">
+                  <span>Classroom Environment:</span>
+                  <span class="mcq-value {{ fb.classroom_environment|lower }}">{{ fb.classroom_environment }}</span>
+                </div>
+                <div class="mcq-result-item">
+                  <span>Assessment Fairness:</span>
+                  <span class="mcq-value {{ fb.assessment_fairness|lower }}">{{ fb.assessment_fairness }}</span>
+                </div>
+                <div class="mcq-result-item">
+                  <span>Learning Resources:</span>
+                  <span class="mcq-value {{ fb.learning_resources|lower }}">{{ fb.learning_resources }}</span>
+                </div>
+                <div class="mcq-result-item">
+                  <span>Course Organization:</span>
+                  <span class="mcq-value {{ fb.course_organization|lower }}">{{ fb.course_organization }}</span>
+                </div>
+              </div>
+            </div>
+            
+            {% if fb.suggestions %}
+            <div class="suggestions-box">
+              <div class="suggestions-title">💬 Student Suggestions:</div>
+              <div class="suggestions-text">"{{ fb.suggestions }}"</div>
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="no-feedback">
+            <div class="no-feedback-icon">📭</div>
+            <h2>No Feedback Available</h2>
+            <p>No feedback matches your current filters, or students haven't submitted any feedback yet.</p>
+          </div>
+        {% endif %}
+      </div>
+    </main>
+
+    <script>
+      // Dropdown toggle
+      const optionsToggle = document.getElementById('optionsToggle');
+      const optionsMenu = document.getElementById('optionsMenu');
+
+      optionsToggle.addEventListener('click', () => {
+        optionsMenu.style.display =
+          optionsMenu.style.display === 'block' ? 'none' : 'block';
+      });
+
+      window.addEventListener('click', (e) => {
+        if (!optionsToggle.contains(e.target) && !optionsMenu.contains(e.target)) {
+          optionsMenu.style.display = 'none';
+        }
+      });
+
+      // Side panel toggle
+      const menuToggle = document.getElementById('menuToggle');
+      const insideMenuToggle = document.getElementById('insideMenuToggle');
+      const sidePanel = document.getElementById('sidePanel');
+      const closePanel = document.getElementById('closePanel');
+
+      function toggleSidePanel() {
+        sidePanel.classList.toggle('open');
+      }
+
+      menuToggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleSidePanel();
+      });
+
+      insideMenuToggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleSidePanel();
+      });
+
+      closePanel.addEventListener('click', (e) => {
+        e.stopPropagation();
+        sidePanel.classList.remove('open');
+      });
+
+      window.addEventListener('click', (e) => {
+        if (!sidePanel.contains(e.target) && !menuToggle.contains(e.target)) {
+          sidePanel.classList.remove('open');
+        }
+      });
+
+      // Course filter functionality
+      function updateCourseFilter() {
+        const teacherSelect = document.getElementById('teacher_select');
+        const courseSelect = document.getElementById('course_select');
+        const selectedTeacher = teacherSelect.value;
+        
+        if (selectedTeacher === 'all') {
+          Array.from(courseSelect.options).forEach(option => {
+            option.style.display = '';
+          });
+        } else {
+          Array.from(courseSelect.options).forEach(option => {
+            if (option.value === 'all') {
+              option.style.display = '';
+            } else if (option.dataset.teacher === selectedTeacher) {
+              option.style.display = '';
+            } else {
+              option.style.display = 'none';
+            }
+          });
+          courseSelect.value = 'all';
+        }
+      }
+      
+      updateCourseFilter();
+    </script>
+  </body>
+</html>
