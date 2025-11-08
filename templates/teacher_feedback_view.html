@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'teacher_dashboard.html' %}
 
 {% block title %}View Feedback - Teacher{% endblock %}
 
@@ -38,7 +38,7 @@
 
 <!-- Filter -->
 <div class="filter-section">
-    <form method="GET" action="{{ url_for('teacher_view_feedback') }}">
+    <form method="GET" action="{{ url_for('teacher_feedback_view') }}">
         <div class="filter-group">
             <select name="course_code" onchange="this.form.submit()">
                 <option value="all" {% if selected_course == 'all' %}selected{% endif %}>All Courses</option>

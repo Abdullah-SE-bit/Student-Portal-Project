@@ -31,11 +31,11 @@ def teacher_login():
         conn.close()
 
         if teacher:
-            # Extract numeric digits and take the last 4 as password
             real_pass = ''.join([ch for ch in tid if ch.isdigit()])[-4:]
             if password == real_pass:
                 session['user'] = tid
-                session['user_name'] = teacher[0]  # store teacher name
+                session['user_name'] = teacher[0]
+                session['Teacher_ID'] = teacher[1]   # ✅ FIX ADDED
                 return redirect(url_for('teacher_home'))
             else:
                 flash("Invalid ID or Password", "danger")
@@ -43,7 +43,6 @@ def teacher_login():
             flash("Invalid ID or Password", "danger")
 
     return render_template('login_T.html')
-
 
 # ---------- STUDENT LOGIN ----------
 @app.route('/login_S.html', methods=['GET', 'POST'])
@@ -1189,7 +1188,7 @@ def submit_feedback():
 # ============ TEACHER FEEDBACK ROUTES ============
 
 @app.route('/teacher/feedback', methods=['GET'])
-def teacher_view_feedback():
+def teacher_feedback_view():
     """Teachers view feedback for their courses only"""
     if 'user' not in session:
         flash('Please login as teacher', 'error')
