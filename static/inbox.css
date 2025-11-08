@@ -224,3 +224,8 @@
   .message-form input[type="text"] { font-size: 14px; padding:9px; }
   .send-btn { padding: 9px 12px; font-size:14px; }
 }
+
+/* Teacher avatar - green color */
+.contact-avatar.teacher-avatar {
+  background: linear-gradient(135deg, #2E7D32, #1B5E20) !important;
+}

@@ -1,0 +1,406 @@
+{% extends "admin_dashboard.html" %}
+{% block title %}Admin Inbox{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='inbox.css') }}">
+
+<div class="inbox-app">
+  <!-- Sidebar (contacts) -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="me">
+        <div class="avatar">A</div>
+        <div class="me-info">
+          <div class="me-name">{{ user_name if user_name else user }}</div>
+          <div class="me-status">Online</div>
+        </div>
+      </div>
+      <div class="sidebar-actions">
+        <button class="icon-btn" id="newChatBtn" title="New chat">＋</button>
+        <button class="icon-btn" id="sidebarToggle" title="Toggle">≡</button>
+      </div>
+    </div>
+
+    <div class="search">
+      <input type="search" id="contactSearch" placeholder="Search by name or ID..." />
+    </div>
+
+    <!-- Filters Section -->
+    <div class="filter-section" style="padding: 10px; border-bottom: 1px solid #f0f0f0;">
+      <!-- User Type Filter -->
+      <div style="margin-bottom: 10px;">
+        <label for="typeFilter" style="font-size: 13px; color: #666; margin-bottom: 5px; display: block;">User Type:</label>
+        <select id="typeFilter" style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #ddd; font-size: 14px;">
+          <option value="">All Users</option>
+          <option value="student">Students Only</option>
+          <option value="teacher">Teachers Only</option>
+        </select>
+      </div>
+
+      <!-- Department Filter -->
+      <div style="margin-bottom: 10px;">
+        <label for="departmentFilter" style="font-size: 13px; color: #666; margin-bottom: 5px; display: block;">Department:</label>
+        <select id="departmentFilter" style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #ddd; font-size: 14px;">
+          <option value="">All Departments</option>
+          {% for dept in departments %}
+          <option value="{{ dept }}">{{ dept }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Section Filter (for students only) -->
+      <div style="margin-bottom: 10px;">
+        <label for="sectionFilter" style="font-size: 13px; color: #666; margin-bottom: 5px; display: block;">Section (Students):</label>
+        <select id="sectionFilter" style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #ddd; font-size: 14px;">
+          <option value="">All Sections</option>
+          {% for sec in sections %}
+          <option value="{{ sec }}">Section {{ sec }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Reset Filters Button -->
+      <button id="resetFilters" style="width: 100%; padding: 8px; background: #124DB5; color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer;">
+        Reset Filters
+      </button>
+    </div>
+
+    <div class="contacts" id="contactsList">
+  {% for c in contacts %}
+  <div class="contact-item" 
+       data-id="{{ c.id }}" 
+       data-name="{{ c.name }}" 
+       data-roll="{{ c.roll_no }}" 
+       data-type="{{ c.type }}"
+       data-department="{{ c.department }}"
+       data-section="{{ c.section }}">
+    <div class="contact-left">
+      <div class="contact-avatar {% if c.type == 'teacher' %}teacher-avatar{% endif %}">
+        {{ c.name[0]|upper }}
+      </div>
+    </div>
+    <div class="contact-mid">
+      <div class="contact-name">{{ c.display_name }}</div>
+      <div class="contact-last">{{ c.last_msg or "" }}</div>
+    </div>
+    <div class="contact-right">
+      <div class="contact-time">{{ c.last_time or '' }}</div>
+      {% if c.unread and c.unread > 0 %}
+        <div class="contact-unread">{{ c.unread }}</div>
+      {% endif %}
+    </div>
+  </div>
+  {% else %}
+  <div class="no-contacts">No contacts found.</div>
+  {% endfor %}
+</div>
+  </aside>
+
+  <!-- Chat area -->
+  <main class="chat-area" id="chatArea">
+    <div class="chat-header" id="chatHeader">
+      <div class="header-left">
+        <button class="icon-btn" id="backToContacts" title="Back">◀</button>
+        <div class="chat-avatar" id="chatAvatar">?</div>
+        <div class="chat-meta">
+          <div class="chat-name" id="chatName">Select a contact</div>
+          <div class="chat-sub">Last seen recently</div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" title="Search messages">🔎</button>
+        <button class="icon-btn" title="More">⋯</button>
+      </div>
+    </div>
+
+    <div class="messages-wrap" id="messagesWrap">
+      <div class="messages-empty">Choose a contact to start messaging.</div>
+    </div>
+
+    <form id="messageForm" class="message-form" autocomplete="off" onsubmit="return false;">
+      <button type="button" class="emoji-btn" title="Emoji">😊</button>
+      <input type="text" id="messageInput" placeholder="Type a message" />
+      <button type="submit" id="sendBtn" class="send-btn">Send</button>
+    </form>
+  </main>
+</div>
+
+<!-- Socket.IO client -->
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"
+integrity="sha384-FKqR7g5SGTS4L6XhF6+7TcvCps+hOxM5B1e3K7QpRk2pl3LL3s2t2Xph2vJrV5lD"
+crossorigin="anonymous"></script>
+
+<script>
+/* ===== Admin Inbox with Advanced Filters ===== */
+
+(() => {
+  const userId = "{{ user }}";
+  const userName = "{{ user_name or '' }}";
+  const contactsListEl = document.getElementById('contactsList');
+  const messagesWrap = document.getElementById('messagesWrap');
+  const chatNameEl = document.getElementById('chatName');
+  const chatAvatarEl = document.getElementById('chatAvatar');
+  const messageInput = document.getElementById('messageInput');
+  const sendBtn = document.getElementById('sendBtn');
+  const messageForm = document.getElementById('messageForm');
+  const sidebar = document.getElementById('sidebar');
+  const sidebarToggle = document.getElementById('sidebarToggle');
+  const backToContacts = document.getElementById('backToContacts');
+  const contactSearch = document.getElementById('contactSearch');
+  const typeFilter = document.getElementById('typeFilter');
+  const departmentFilter = document.getElementById('departmentFilter');
+  const sectionFilter = document.getElementById('sectionFilter');
+  const resetFiltersBtn = document.getElementById('resetFilters');
+
+  let activeContactId = null;
+  let socket = null;
+
+  function initSocket() {
+    socket = io();
+    socket.on('connect', () => {
+      console.log('connected to socket server', socket.id);
+      socket.emit('join', { user_id: userId });
+    });
+
+    socket.on('message', data => {
+      const peerId = data.from === userId ? data.to : data.from;
+      const isActive = (peerId === activeContactId);
+      appendMessageElement(data, (data.from === userId));
+      if (!isActive) markContactUnread(peerId);
+      scrollToBottom();
+    });
+
+    socket.on('typing', d => {
+      if (d.from === activeContactId) {
+        showTypingIndicator(d.typing ? true : false);
+      }
+    });
+
+    socket.on('disconnect', () => {
+      console.log('socket disconnected');
+    });
+  }
+
+  // Helpers
+  function el(tag, cls, html) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (html !== undefined) e.innerHTML = html;
+    return e;
+  }
+
+  function clearMessages() {
+    messagesWrap.innerHTML = '';
+  }
+
+  function appendMessageElement(msg, isMine) {
+    const row = el('div', 'msg-row ' + (isMine ? 'mine' : 'their'));
+    const bubble = el('div', 'msg-bubble', escapeHtml(msg.text));
+    const meta = el('div', 'msg-meta', formatTime(msg.ts));
+    bubble.appendChild(meta);
+    row.appendChild(bubble);
+    const emptyNotice = messagesWrap.querySelector('.messages-empty');
+    if (emptyNotice) emptyNotice.remove();
+    messagesWrap.appendChild(row);
+  }
+
+  function showTypingIndicator(on) {
+    let tid = document.getElementById('typingIndicator');
+    if (on) {
+      if (!tid) {
+        tid = el('div', 'typing', 'Typing...');
+        tid.id = 'typingIndicator';
+        messagesWrap.appendChild(tid);
+        scrollToBottom();
+      }
+    } else {
+      if (tid) tid.remove();
+    }
+  }
+
+  function formatTime(ts) {
+    if (!ts) return '';
+    try {
+      const d = new Date(ts);
+      return d.toLocaleString();
+    } catch(e) {
+      return ts;
+    }
+  }
+
+  function escapeHtml(s) {
+    if (!s) return '';
+    return s.replace(/[&<>"']/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#039;"})[m]);
+  }
+
+  function scrollToBottom() {
+    messagesWrap.scrollTop = messagesWrap.scrollHeight;
+  }
+
+  // Contact click
+  contactsListEl.addEventListener('click', e => {
+    let elNode = e.target;
+    while (elNode && !elNode.classList.contains('contact-item')) {
+      elNode = elNode.parentElement;
+    }
+    if (!elNode) return;
+    const cid = elNode.dataset.id;
+    const displayName = elNode.querySelector('.contact-name').textContent;
+    openChatWith(cid, displayName);
+  });
+
+  // Open chat with contact
+  function openChatWith(contactId, name) {
+    if (!contactId) return;
+    activeContactId = contactId;
+    chatNameEl.textContent = name;
+    chatAvatarEl.textContent = name[0] ? name[0].toUpperCase() : '?';
+    clearMessages();
+    fetch('/messages/' + encodeURIComponent(contactId))
+      .then(r => r.ok ? r.json() : Promise.reject('Failed'))
+      .then(data => {
+        if (!Array.isArray(data) || data.length === 0) {
+          messagesWrap.innerHTML = '<div class="messages-empty">No messages yet. Say hello 👋</div>';
+        } else {
+          data.forEach(m => appendMessageElement(m, m.from === userId));
+        }
+        scrollToBottom();
+        clearContactUnread(contactId);
+      })
+      .catch(err => {
+        messagesWrap.innerHTML = '<div class="messages-empty">Unable to load chat.</div>';
+        console.error(err);
+      });
+  }
+
+  // Send message
+  sendBtn.addEventListener('click', sendMessage);
+  messageInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    } else {
+      if (activeContactId && socket) {
+        socket.emit('typing', { to: activeContactId, typing: true });
+        if (window._typingTO) clearTimeout(window._typingTO);
+        window._typingTO = setTimeout(()=> {
+          socket.emit('typing', { to: activeContactId, typing: false });
+        }, 1200);
+      }
+    }
+  });
+
+  function sendMessage() {
+    const txt = messageInput.value && messageInput.value.trim();
+    if (!txt || !activeContactId) return;
+    const payload = { to: activeContactId, text: txt };
+    if (socket) {
+      socket.emit('private_message', payload);
+      appendMessageElement({ from: userId, to: activeContactId, text: txt, ts: new Date().toISOString() }, true);
+      messageInput.value = '';
+      scrollToBottom();
+    } else {
+      fetch('/messages/' + encodeURIComponent(activeContactId), {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(payload)
+      }).catch(console.error);
+    }
+  }
+
+  // Unread helpers
+  function markContactUnread(contactId) {
+    const c = contactsListEl.querySelector('.contact-item[data-id="' + contactId + '"]');
+    if (!c) return;
+    let badge = c.querySelector('.contact-unread');
+    if (!badge) {
+      badge = el('div', 'contact-unread', '1');
+      c.querySelector('.contact-right').appendChild(badge);
+    } else {
+      badge.textContent = parseInt(badge.textContent||0) + 1;
+    }
+  }
+  
+  function clearContactUnread(contactId) {
+    const c = contactsListEl.querySelector('.contact-item[data-id="' + contactId + '"]');
+    if (!c) return;
+    const badge = c.querySelector('.contact-unread');
+    if (badge) badge.remove();
+  }
+
+  // Sidebar toggle
+  sidebarToggle.addEventListener('click', () => sidebar.classList.toggle('collapsed'));
+  backToContacts.addEventListener('click', () => {
+    sidebar.classList.remove('collapsed');
+  });
+
+  // Advanced filter function
+  function filterContacts() {
+    const searchQuery = contactSearch.value.toLowerCase();
+    const selectedType = typeFilter.value;
+    const selectedDepartment = departmentFilter.value;
+    const selectedSection = sectionFilter.value;
+    
+    let visibleCount = 0;
+    
+    document.querySelectorAll('.contact-item').forEach(ci => {
+      const name = (ci.dataset.name || '').toLowerCase();
+      const rollNo = (ci.dataset.roll || '').toLowerCase();
+      const type = ci.dataset.type || '';
+      const department = ci.dataset.department || '';
+      const section = ci.dataset.section || '';
+      
+      // Check search match (name or roll/ID)
+      const searchMatch = !searchQuery || name.includes(searchQuery) || rollNo.includes(searchQuery);
+      
+      // Check type match
+      const typeMatch = !selectedType || type === selectedType;
+      
+      // Check department match
+      const departmentMatch = !selectedDepartment || department === selectedDepartment;
+      
+      // Check section match (only for students)
+      const sectionMatch = !selectedSection || (type === 'student' && section === selectedSection);
+      
+      // Show only if all filters match
+      const shouldShow = searchMatch && typeMatch && departmentMatch && sectionMatch;
+      ci.style.display = shouldShow ? '' : 'none';
+      
+      if (shouldShow) visibleCount++;
+    });
+    
+    // Show/hide "no contacts" message
+    const noContactsMsg = contactsListEl.querySelector('.no-contacts');
+    if (visibleCount === 0 && !noContactsMsg) {
+      const msg = el('div', 'no-contacts', 'No contacts match your filters.');
+      contactsListEl.appendChild(msg);
+    } else if (visibleCount > 0 && noContactsMsg) {
+      noContactsMsg.remove();
+    }
+  }
+
+  // Reset all filters
+  function resetFilters() {
+    contactSearch.value = '';
+    typeFilter.value = '';
+    departmentFilter.value = '';
+    sectionFilter.value = '';
+    filterContacts();
+  }
+
+  // Add event listeners for all filters
+  contactSearch.addEventListener('input', filterContacts);
+  typeFilter.addEventListener('change', filterContacts);
+  departmentFilter.addEventListener('change', filterContacts);
+  sectionFilter.addEventListener('change', filterContacts);
+  resetFiltersBtn.addEventListener('click', resetFilters);
+
+  // Initialize socket
+  initSocket();
+
+  // Expose for debug
+  window._inbox = { openChatWith, socket };
+})();
+</script>
+
+{% endblock %}

@@ -454,8 +454,9 @@ def teacher_inbox():
     # --- If no enrollments, show no students ---
     if not enrolled_roll_nos:
         contacts = []
+        sections = []
         conn.close()
-        return render_template('inbox_T.html', user=tid, user_name=teacher_name, contacts=contacts)
+        return render_template('inbox_T.html', user=tid, user_name=teacher_name, contacts=contacts, sections=sections)
 
     # --- Filter students by department (from Roll_No) and get their details ---
     placeholders = ','.join(['?' for _ in enrolled_roll_nos])
@@ -470,12 +471,15 @@ def teacher_inbox():
 
     # --- Build inbox contact list (filter by department) ---
     contacts = []
+    sections_set = set()
+    
     for s in students_raw:
         roll_no = s['Roll_No']
         
         # Extract department from Roll_No (e.g., M-22_SE-A-3001 -> SE)
         parts = roll_no.split('-')
         student_dept = None
+        section = None  # This will be A, B, C, etc.
         
         if len(parts) >= 2:
             p1 = parts[1]
@@ -483,14 +487,19 @@ def teacher_inbox():
                 sub = p1.split('_')
                 if len(sub) >= 2:
                     student_dept = sub[1]
-            else:
-                if len(parts) >= 3:
-                    if '_' in parts[2]:
-                        student_dept = parts[2].split('_')[0]
-                    else:
-                        student_dept = ''.join([ch for ch in parts[2] if ch.isalpha()])
         
-        # Fallback
+        # Extract section (A, B, C) from third part
+        # Roll_No format: M-22_SE-A-3001
+        # parts[2] should be 'A' (the section letter)
+        if len(parts) >= 3:
+            # parts[2] is like 'A' or could have other chars
+            section_part = parts[2]
+            # Extract only alphabetic characters (should be single letter like A, B, C)
+            section = ''.join([ch for ch in section_part if ch.isalpha()])
+            if not section:
+                section = None
+        
+        # Fallback for department
         if not student_dept:
             tokens = re.split(r'[_\-]', roll_no)
             for t in tokens:
@@ -500,32 +509,144 @@ def teacher_inbox():
         
         # Only add if department matches
         if student_dept == department:
-            # Extract section (optional, for display)
-            section = ''
-            if len(parts) >= 3:
-                sec_candidate = parts[2]
-                if '_' in sec_candidate:
-                    section = sec_candidate.split('_')[0] if sec_candidate.split('_')[0].isalpha() else ''
-                else:
-                    section = ''.join([ch for ch in sec_candidate if ch.isalpha()])
+            if section:
+                sections_set.add(section)
             
-            display_name = f"{s['Name']}" + (f" ({section})" if section else "")
+            display_name = f"{s['Name']}" + (f" (Sec {section})" if section else "")
             
             contacts.append({
                 'id': roll_no,
-                'name': display_name,
+                'name': s['Name'],  # Just name without section
+                'display_name': display_name,  # Name with section for display
+                'roll_no': roll_no,
+                'section': section if section else '',
                 'last_msg': 'No messages yet',
                 'last_time': '',
                 'unread': 0
             })
 
     conn.close()
+    
+    # Sort sections alphabetically
+    sections = sorted(list(sections_set))
 
     return render_template(
         'inbox_T.html',
         user=tid,
         user_name=teacher_name,
-        contacts=contacts
+        contacts=contacts,
+        sections=sections
+    )
+
+# ------------------- Teacher Inbox ---------------------------
+
+@app.route('/admin_inbox')
+def admin_inbox():
+    if 'user' not in session:
+        return redirect(url_for('admin_login'))
+
+    aid = session['user']  # Admin ID
+
+    conn = sqlite3.connect('flake.db')
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+
+    # --- Get admin info ---
+    cur.execute("""
+        SELECT admin_id FROM admins WHERE admin_id = ?
+    """, (aid,))
+    admin = cur.fetchone()
+
+    if not admin:
+        conn.close()
+        flash("Admin not found!", "danger")
+        return redirect(url_for('admin_dashboard'))
+
+    # --- Get ALL students ---
+    cur.execute("""
+        SELECT Roll_No, Name FROM students ORDER BY Name
+    """)
+    students_raw = cur.fetchall()
+
+    # --- Get ALL teachers ---
+    cur.execute("""
+        SELECT Teacher_ID, Name, Department, Course_Code FROM teachers ORDER BY Name
+    """)
+    teachers_raw = cur.fetchall()
+
+    conn.close()
+
+    # --- Build contacts list ---
+    contacts = []
+
+    # Add all students
+    for s in students_raw:
+        roll_no = s['Roll_No']
+        
+        # Extract section from Roll_No
+        parts = roll_no.split('-')
+        section = ''
+        department = ''
+        
+        if len(parts) >= 2:
+            p1 = parts[1]
+            if '_' in p1:
+                sub = p1.split('_')
+                if len(sub) >= 2:
+                    department = sub[1]
+        
+        if len(parts) >= 3:
+            section_part = parts[2]
+            section = ''.join([ch for ch in section_part if ch.isalpha()])
+        
+        display_name = f"{s['Name']}" + (f" (Sec {section})" if section else "")
+        
+        contacts.append({
+            'id': roll_no,
+            'name': s['Name'],
+            'display_name': display_name,
+            'roll_no': roll_no,
+            'type': 'student',
+            'department': department,
+            'section': section,
+            'last_msg': 'No messages yet',
+            'last_time': '',
+            'unread': 0
+        })
+
+    # Add all teachers
+    for t in teachers_raw:
+        teacher_id = t['Teacher_ID']
+        department = t['Department']
+        course_code = t['Course_Code']
+        
+        display_name = f"{t['Name']} (Teacher - {department})"
+        
+        contacts.append({
+            'id': teacher_id,
+            'name': t['Name'],
+            'display_name': display_name,
+            'roll_no': teacher_id,
+            'type': 'teacher',
+            'department': department,
+            'section': '',
+            'course_code': course_code,
+            'last_msg': 'No messages yet',
+            'last_time': '',
+            'unread': 0
+        })
+
+    # Get unique departments and sections for filters
+    departments = sorted(list(set([c['department'] for c in contacts if c['department']])))
+    sections = sorted(list(set([c['section'] for c in contacts if c['section']])))
+
+    return render_template(
+        'inbox_A.html',
+        user=aid,
+        user_name='Admin',
+        contacts=contacts,
+        departments=departments,
+        sections=sections
     )
 
 # ------------------- Course Registration ---------------------
@@ -1205,5 +1326,4 @@ def admin_view_feedback():
 # ------------------ RUN SERVER ------------------
 if __name__ == '__main__':
     socketio.run(app, debug=True)
-
 
