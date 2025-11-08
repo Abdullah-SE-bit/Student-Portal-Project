@@ -1257,7 +1257,7 @@ def teacher_feedback_view():
 # ============ ADMIN FEEDBACK ROUTES ============
 
 @app.route('/admin/feedback', methods=['GET'])
-def admin_view_feedback():
+def admin_feedback_view():
     """Admin views all feedback with teacher/course filter"""
     if 'user' not in session:
         flash('Please login as admin', 'error')
