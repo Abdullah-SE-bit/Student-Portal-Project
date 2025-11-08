@@ -1,96 +1,626 @@
 /* ===== Global Reset ===== */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: "Segoe UI", Arial, sans-serif;
-}
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
 
-/* ===== Background Layout ===== */
-body {
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-image: url('FAST.jpg'); /* Replace with your background image */
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  position: relative;
-  overflow: hidden;
-}
+        /* ===== Background Layout ===== */
+        body {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-image: linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), 
+                              url('FAST.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            position: relative;
+            overflow: hidden;
+        }
 
-/* Optional: subtle overlay for better text contrast */
-body::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.25);
-  z-index: 0;
-}
+        /* ===== Container ===== */
+        .container {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+        }
 
-/* ===== Login Box ===== */
-.login-box {
-  position: relative;
-  z-index: 1;
-  background-color: rgba(255, 255, 255, 0.9);
-  padding: 40px 35px;
-  border-radius: 20px;
-  text-align: center;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
-  width: 320px;
-  backdrop-filter: blur(4px);
-}
+        /* ===== ANIMATED CORNER LINES ===== */
+        .corner-lines {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
 
-h2 {
-  margin-bottom: 25px;
-  color: #124DB5;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-}
+        /* Top-Left Corner Line */
+        .corner-line-tl {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 300px;
+            height: 2px;
+            background: linear-gradient(90deg, #64c8ff 0%, transparent 100%);
+            box-shadow: 0 0 15px #64c8ff, 0 0 30px rgba(100, 200, 255, 0.5);
+            animation: slideLineTopLeft 3s ease-in-out infinite;
+        }
 
-/* ===== Buttons ===== */
-.btn {
-  display: block;
-  width: 100%;
-  margin: 12px 0;
-  padding: 12px;
-  background-color: #124DB5;
-  color: white;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  font-size: 16px;
-  font-weight: 500;
-  transition: background-color 0.3s ease, transform 0.2s ease;
-}
+        @keyframes slideLineTopLeft {
+            0%, 100% {
+                left: 50%;
+                top: 50%;
+                opacity: 0;
+            }
+            50% {
+                left: 30%;
+                top: 30%;
+                opacity: 1;
+            }
+        }
 
-.btn:hover {
-  background-color: #0f3d8f;
-  transform: translateY(-2px);
-}
+        /* Top-Right Corner Line */
+        .corner-line-tr {
+            position: absolute;
+            top: 50%;
+            right: 50%;
+            width: 300px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent 0%, #8338ec 100%);
+            box-shadow: 0 0 15px #8338ec, 0 0 30px rgba(131, 56, 236, 0.5);
+            animation: slideLineTopRight 3s ease-in-out infinite;
+        }
 
-.btn:active {
-  transform: scale(0.98);
-}
+        @keyframes slideLineTopRight {
+            0%, 100% {
+                right: 50%;
+                top: 50%;
+                opacity: 0;
+            }
+            50% {
+                right: 30%;
+                top: 30%;
+                opacity: 1;
+            }
+        }
 
-/* ===== Responsive Design ===== */
-@media (max-width: 600px) {
-  .login-box {
-    width: 85%;
-    padding: 30px 25px;
-  }
+        /* Bottom-Right Corner Line */
+        .corner-line-br {
+            position: absolute;
+            bottom: 50%;
+            right: 50%;
+            width: 300px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent 0%, #ff006e 100%);
+            box-shadow: 0 0 15px #ff006e, 0 0 30px rgba(255, 0, 110, 0.5);
+            animation: slideLineBottomRight 3s ease-in-out infinite;
+        }
 
-  h2 {
-    font-size: 22px;
-  }
+        @keyframes slideLineBottomRight {
+            0%, 100% {
+                right: 50%;
+                bottom: 50%;
+                opacity: 0;
+            }
+            50% {
+                right: 30%;
+                bottom: 30%;
+                opacity: 1;
+            }
+        }
 
-  .btn {
-    font-size: 15px;
-    padding: 10px;
-  }
+        /* Bottom-Left Corner Line */
+        .corner-line-bl {
+            position: absolute;
+            bottom: 50%;
+            left: 50%;
+            width: 300px;
+            height: 2px;
+            background: linear-gradient(90deg, #64c8ff 0%, transparent 100%);
+            box-shadow: 0 0 15px #64c8ff, 0 0 30px rgba(100, 200, 255, 0.5);
+            animation: slideLineBottomLeft 3s ease-in-out infinite;
+        }
 
-  body::before {
-    background: rgba(0, 0, 0, 0.3);
-  }
-}
+        @keyframes slideLineBottomLeft {
+            0%, 100% {
+                left: 50%;
+                bottom: 50%;
+                opacity: 0;
+            }
+            50% {
+                left: 30%;
+                bottom: 30%;
+                opacity: 1;
+            }
+        }
+
+        /* Vertical lines */
+        .corner-line-v-left {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 2px;
+            height: 300px;
+            background: linear-gradient(180deg, #8338ec 0%, transparent 100%);
+            box-shadow: 0 0 15px #8338ec, 0 0 30px rgba(131, 56, 236, 0.5);
+            animation: slideLineVerticalLeft 3s ease-in-out infinite;
+        }
+
+        @keyframes slideLineVerticalLeft {
+            0%, 100% {
+                left: 50%;
+                top: 50%;
+                opacity: 0;
+            }
+            50% {
+                left: 30%;
+                top: 35%;
+                opacity: 1;
+            }
+        }
+
+        .corner-line-v-right {
+            position: absolute;
+            right: 50%;
+            top: 50%;
+            width: 2px;
+            height: 300px;
+            background: linear-gradient(180deg, transparent 0%, #ff006e 100%);
+            box-shadow: 0 0 15px #ff006e, 0 0 30px rgba(255, 0, 110, 0.5);
+            animation: slideLineVerticalRight 3s ease-in-out infinite;
+        }
+
+        @keyframes slideLineVerticalRight {
+            0%, 100% {
+                right: 50%;
+                top: 50%;
+                opacity: 0;
+            }
+            50% {
+                right: 30%;
+                top: 35%;
+                opacity: 1;
+            }
+        }
+
+        /* ===== Login Box ===== */
+        .login-box {
+            background: rgba(20, 20, 30, 0.92);
+            backdrop-filter: blur(15px);
+            border-radius: 30px;
+            padding: 55px 50px;
+            width: 420px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            animation: slideUp 0.9s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transform-origin: bottom;
+            position: relative;
+            z-index: 2;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(60px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ===== Logo & Title ===== */
+        .logo-section {
+            margin-bottom: 40px;
+        }
+
+        .logo {
+            width: 90px;
+            height: 90px;
+            margin: 0 auto 25px;
+            animation: rotateLogoSpin 3s linear infinite, float 4s ease-in-out infinite;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            filter: drop-shadow(0 10px 25px rgba(100, 200, 255, 0.4));
+            background: linear-gradient(135deg, #64c8ff, #7dd3ff);
+            border-radius: 20px;
+            font-size: 50px;
+            font-weight: bold;
+            color: #ffffff;
+        }
+
+        @keyframes rotateLogoSpin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-12px) rotate(0deg); }
+        }
+
+        h1 {
+            color: #ffffff;
+            font-size: 38px;
+            font-weight: 900;
+            margin-bottom: 10px;
+            letter-spacing: 3px;
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            background: linear-gradient(135deg, #64c8ff, #7dd3ff, #64c8ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: #a0a0b0;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        /* ===== Divider ===== */
+        .divider {
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(100, 200, 255, 0.5), transparent);
+            border-radius: 2px;
+            margin: 30px 0;
+            animation: expandWidth 0.9s ease-out;
+        }
+
+        @keyframes expandWidth {
+            from {
+                width: 0;
+                margin-left: 50%;
+            }
+            to {
+                width: 100%;
+                margin-left: 0;
+            }
+        }
+
+        /* ===== Button Container ===== */
+        .button-container {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        /* ===== Buttons ===== */
+        .btn {
+            padding: 16px 28px;
+            border: none;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 1px;
+            transform: translateY(0);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+            border: 2px solid transparent;
+        }
+
+        /* Button animation on load */
+        .btn {
+            animation: slideInButton 0.7s ease-out backwards;
+        }
+
+        .btn:nth-child(1) { animation-delay: 0.2s; }
+        .btn:nth-child(2) { animation-delay: 0.4s; }
+        .btn:nth-child(3) { animation-delay: 0.6s; }
+
+        @keyframes slideInButton {
+            from {
+                opacity: 0;
+                transform: translateX(-40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* ===== Teacher Button - Deep Ocean Blue ===== */
+        .btn-teacher {
+            background: linear-gradient(135deg, #1a4d7a 0%, #2a6ba8 50%, #1a4d7a 100%);
+            color: #ffffff;
+            border-color: rgba(42, 107, 168, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-teacher::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn-teacher:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 15px 40px rgba(42, 107, 168, 0.5), inset 0 0 20px rgba(255, 255, 255, 0.1);
+            border-color: rgba(100, 200, 255, 0.8);
+            background: linear-gradient(135deg, #2a6ba8 0%, #3a7bc8 50%, #2a6ba8 100%);
+        }
+
+        .btn-teacher:hover::after {
+            left: 100%;
+        }
+
+        .btn-teacher:active {
+            transform: translateY(-2px) scale(0.98);
+        }
+
+        /* ===== Student Button - Vibrant Purple ===== */
+        .btn-student {
+            background: linear-gradient(135deg, #5a1a7a 0%, #8a2fa8 50%, #5a1a7a 100%);
+            color: #ffffff;
+            border-color: rgba(138, 47, 168, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-student::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn-student:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 15px 40px rgba(138, 47, 168, 0.5), inset 0 0 20px rgba(255, 255, 255, 0.1);
+            border-color: rgba(200, 100, 255, 0.8);
+            background: linear-gradient(135deg, #8a2fa8 0%, #aa4fc8 50%, #8a2fa8 100%);
+        }
+
+        .btn-student:hover::after {
+            left: 100%;
+        }
+
+        .btn-student:active {
+            transform: translateY(-2px) scale(0.98);
+        }
+
+        /* ===== Admin Button - Dark Emerald Green ===== */
+        .btn-admin {
+            background: linear-gradient(135deg, #1a5a3a 0%, #2a8a5a 50%, #1a5a3a 100%);
+            color: #ffffff;
+            border-color: rgba(42, 138, 90, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-admin::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn-admin:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 15px 40px rgba(42, 138, 90, 0.5), inset 0 0 20px rgba(255, 255, 255, 0.1);
+            border-color: rgba(100, 255, 180, 0.8);
+            background: linear-gradient(135deg, #2a8a5a 0%, #3aaa7a 50%, #2a8a5a 100%);
+        }
+
+        .btn-admin:hover::after {
+            left: 100%;
+        }
+
+        .btn-admin:active {
+            transform: translateY(-2px) scale(0.98);
+        }
+
+        /* Button ripple effect */
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.25);
+            transform: translate(-50%, -50%);
+            transition: width 0.7s, height 0.7s;
+        }
+
+        .btn:active::before {
+            width: 350px;
+            height: 350px;
+        }
+
+        /* Button text styling */
+        .btn-text {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .btn-icon {
+            font-size: 22px;
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+        }
+
+        .btn:hover .btn-icon {
+            transform: scale(1.25) rotate(15deg);
+        }
+
+        /* ===== Footer ===== */
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 12px;
+            color: #707080;
+        }
+
+        .footer p {
+            animation: fadeInUp 0.9s ease-out 1.2s backwards;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ===== Responsive Design ===== */
+        @media (max-width: 768px) {
+            .login-box {
+                width: 90%;
+                max-width: 380px;
+                padding: 45px 35px;
+                border-radius: 25px;
+            }
+
+            h1 {
+                font-size: 32px;
+                letter-spacing: 2px;
+            }
+
+            .btn {
+                padding: 14px 24px;
+                font-size: 15px;
+            }
+
+            .logo {
+                width: 75px;
+                height: 75px;
+                margin-bottom: 20px;
+                font-size: 40px;
+            }
+
+            .divider {
+                margin: 25px 0;
+            }
+
+            .button-container {
+                gap: 15px;
+            }
+
+            .corner-line-tl,
+            .corner-line-tr,
+            .corner-line-br,
+            .corner-line-bl {
+                width: 200px;
+            }
+
+            .corner-line-v-left,
+            .corner-line-v-right {
+                height: 200px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .login-box {
+                width: 95%;
+                padding: 35px 25px;
+                border-radius: 20px;
+            }
+
+            h1 {
+                font-size: 28px;
+                letter-spacing: 1.5px;
+            }
+
+            .subtitle {
+                font-size: 11px;
+            }
+
+            .btn {
+                padding: 12px 18px;
+                font-size: 13px;
+            }
+
+            .logo {
+                width: 65px;
+                height: 65px;
+                font-size: 35px;
+            }
+
+            .btn-text {
+                gap: 8px;
+            }
+
+            .btn-icon {
+                font-size: 18px;
+            }
+
+            .corner-line-tl,
+            .corner-line-tr,
+            .corner-line-br,
+            .corner-line-bl {
+                width: 150px;
+            }
+
+            .corner-line-v-left,
+            .corner-line-v-right {
+                height: 150px;
+            }
+        }
+
+        /* ===== Accessibility ===== */
+        .btn:focus {
+            outline: 3px solid rgba(255, 255, 255, 0.5);
+            outline-offset: 2px;
+        }
+
+        /* Reduced motion support */
+        @media (prefers-reduced-motion: reduce) {
+            body::before,
+            body::after,
+            .login-box,
+            .btn,
+            .logo,
+            .divider,
+            .footer p,
+            .corner-line-tl,
+            .corner-line-tr,
+            .corner-line-br,
+            .corner-line-bl,
+            .corner-line-v-left,
+            .corner-line-v-right {
+                animation: none !important;
+            }
+
+            .btn {
+                transition: all 0.15s ease;
+            }
+        }

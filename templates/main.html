@@ -1,20 +1,65 @@
 <!DOCTYPE html>
 <html lang="en">
-<link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
-  <title>FLAKE</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FLAKE - Student Portal</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
 </head>
 <body>
-  <div class="login-box">
-  <h2>FLAKE</h2>
+    <div class="container">
+        <!-- Corner Animated Lines -->
+        <div class="corner-lines">
+            <div class="corner-line-tl"></div>
+            <div class="corner-line-tr"></div>
+            <div class="corner-line-br"></div>
+            <div class="corner-line-bl"></div>
+            <div class="corner-line-v-left"></div>
+            <div class="corner-line-v-right"></div>
+        </div>
 
-  <button class="btn" onclick="location.href='login_T.html'">Teacher</button>
-  <button class="btn" onclick="location.href='login_S.html'">Student</button>
-  <button class="btn" onclick="location.href='login_A.html'">Admin</button>
-</div>
+        <div class="login-box">
+            <div class="logo-section">
+                <div class="logo">❄️</div>
+                <h1>FLAKE</h1>
+                <p class="subtitle">Student Portal</p>
+            </div>
 
+            <div class="divider"></div>
+
+            <div class="button-container">
+                <a href="/login_T.html" style="text-decoration: none;">
+                    <button class="btn btn-teacher" type="button">
+                        <div class="btn-text">
+                            <span class="btn-icon">👨‍🏫</span>
+                            <span>Teacher Login</span>
+                        </div>
+                    </button>
+                </a>
+
+                <a href="/login_S.html" style="text-decoration: none;">
+                    <button class="btn btn-student" type="button">
+                        <div class="btn-text">
+                            <span class="btn-icon">👨‍🎓</span>
+                            <span>Student Login</span>
+                        </div>
+                    </button>
+                </a>
+
+                <a href="/login_A.html" style="text-decoration: none;">
+                    <button class="btn btn-admin" type="button">
+                        <div class="btn-text">
+                            <span class="btn-icon">🔐</span>
+                            <span>Admin Login</span>
+                        </div>
+                    </button>
+                </a>
+            </div>
+
+            <div class="footer">
+                <p>© 2025 FAST NUCES - All Rights Reserved</p>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
