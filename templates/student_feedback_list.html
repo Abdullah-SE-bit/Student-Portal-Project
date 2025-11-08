@@ -87,12 +87,15 @@
                   {% endif %}
                 </td>
                 <td style="text-align: center;">
-                  {% if course.Status != 'Feedback Submitted' %}
-                    <a href="{{ url_for('student_feedback_form_detail', course_code=course.Course_Code) }}" class="btn btn-primary">Submit Feedback</a>
-                  {% else %}
-                    <span class="text-success">Feedback Submitted</span>
-                 {% endif %}
+                  {% if course.Status == 'Submit Feedback' %}
+                    <a href="{{ url_for('student_feedback_form_detail', course_code=course.Course_Code) }}" 
+                          class="btn btn-primary">
+                          Submit Feedback
+                    </a>
 
+                  {% else %}
+                    <span class="status-submitted">✓ Submitted</span>
+                  {% endif %}
                 </td>
               </tr>
               {% endfor %}
