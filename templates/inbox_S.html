@@ -155,18 +155,16 @@ crossorigin="anonymous"></script>
   }
 
   function appendMessageElement(msg, isMine) {
-    // msg: {from, to, text, ts}
-    // create bubble
     const row = el('div', 'msg-row ' + (isMine ? 'mine' : 'their'));
-    const bubble = el('div', 'msg-bubble', escapeHtml(msg.text));
-    const meta = el('div', 'msg-meta', formatTime(msg.ts));
+    const bubble = el('div', 'msg-bubble', escapeHtml(msg.message)); // msg.message
+    const meta = el('div', 'msg-meta', formatTime(msg.timestamp));
     bubble.appendChild(meta);
     row.appendChild(bubble);
-    // if messagesWrap empty message-empty remove it
     const emptyNotice = messagesWrap.querySelector('.messages-empty');
     if (emptyNotice) emptyNotice.remove();
     messagesWrap.appendChild(row);
-  }
+}
+
 
   function showTypingIndicator(on) {
     let tid = document.getElementById('typingIndicator');
@@ -227,7 +225,7 @@ crossorigin="anonymous"></script>
         if (!Array.isArray(data) || data.length === 0) {
           messagesWrap.innerHTML = '<div class="messages-empty">No messages yet. Say hello 👋</div>';
         } else {
-          data.forEach(m => appendMessageElement(m, m.from === userId));
+          data.forEach(m => appendMessageElement(m, m.sender_id === userId));
         }
         scrollToBottom();
         clearContactUnread(contactId);
@@ -322,5 +320,38 @@ crossorigin="anonymous"></script>
   window._inbox = { openChatWith, socket };
 })();
 </script>
+
+<script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+<script>
+    const socket = io();
+
+    const userId = "{{ user }}";  // Flask passes current user ID
+    socket.emit('join', {user_id: userId});
+
+    // Listen for new messages
+    socket.on('receive_message', (msg) => {
+        if (msg.receiver_id === userId || msg.sender_id === userId) {
+            // append message to chat window dynamically
+            addMessageToChat(msg.sender_id, msg.message, msg.timestamp);
+        }
+    });
+
+    // Send message
+    function sendMessage(receiverId, receiverType) {
+        const textBox = document.getElementById("chat_input");
+        const text = textBox.value.trim();
+        if (!text) return;
+
+        socket.emit('send_message', {
+            sender_type: "{{ 'student' if 'student' in request.path else ('teacher' if 'teacher' in request.path else 'admin') }}",
+            receiver_id: receiverId,
+            receiver_type: receiverType,
+            message: text
+        });
+
+        textBox.value = "";
+    }
+</script>
+
 
 {% endblock %}
