@@ -32,11 +32,11 @@ def teacher_login():
         conn.close()
 
         if teacher:
-            # Extract numeric digits and take the last 4 as password
             real_pass = ''.join([ch for ch in tid if ch.isdigit()])[-4:]
             if password == real_pass:
                 session['user'] = tid
-                session['user_name'] = teacher[0]  # store teacher name
+                session['user_name'] = teacher[0]
+                session['Teacher_ID'] = teacher[1]   # ✅ FIX ADDED
                 return redirect(url_for('teacher_home'))
             else:
                 flash("Invalid ID or Password", "danger")
@@ -44,7 +44,6 @@ def teacher_login():
             flash("Invalid ID or Password", "danger")
 
     return render_template('login_T.html')
-
 
 # ---------- STUDENT LOGIN ----------
 @app.route('/login_S.html', methods=['GET', 'POST'])
@@ -1031,7 +1030,6 @@ from datetime import datetime
 
 @app.route('/student/feedback', methods=['GET'])
 def student_feedback_form():
-    """Display feedback form for students"""
     if 'user' not in session:
         flash('Please login as student', 'error')
         return redirect(url_for('student_login'))
@@ -1055,21 +1053,28 @@ def student_feedback_form():
         flash("Student not found!", "danger")
         return redirect(url_for('student_home'))
 
-    # ✅ Get enrolled courses even if teacher is not assigned
+
+        # ✅ Get enrolled courses without duplicates
     cur.execute("""
-        SELECT e.Course_Code, c.Course_Name, c.Credit_Hr,
-               t.Teacher_ID, t.Name AS Teacher_Name,
+        SELECT DISTINCT 
+               e.Course_Code, 
+               c.Course_Name, 
+               c.Credit_Hr,
+               t.Teacher_ID, 
+               t.Name AS Teacher_Name,
                CASE 
-                    WHEN f.id IS NOT NULL THEN 'Feedback Submitted' 
-                    ELSE 'Submit Feedback' 
+                    WHEN f.id IS NOT NULL THEN 'Feedback Submitted'
+                    ELSE 'Submit Feedback'
                END AS Status
         FROM enrollments e
         JOIN courses c ON e.Course_Code = c.Course_Code
-        LEFT JOIN teacher_courses tc ON c.Course_Code = tc.Course_Code   -- changed
-        LEFT JOIN teachers t ON tc.Teacher_ID = t.Teacher_ID             -- changed
+        LEFT JOIN teacher_courses tc ON c.Course_Code = tc.Course_Code
+        LEFT JOIN teachers t ON tc.Teacher_ID = t.Teacher_ID
         LEFT JOIN feedback f ON e.Roll_No = f.Roll_No AND e.Course_Code = f.Course_Code
         WHERE e.Roll_No = ?
+        GROUP BY e.Course_Code
     """, (roll_no,))
+
     
     courses = cur.fetchall()
     conn.close()
@@ -1078,9 +1083,9 @@ def student_feedback_form():
 
 
 
+
 @app.route('/student/feedback/form/<course_code>', methods=['GET'])
 def student_feedback_form_detail(course_code):
-    """Display feedback form for a specific course"""
     if 'user' not in session:
         flash('Please login as student', 'error')
         return redirect(url_for('student_login'))
@@ -1088,7 +1093,7 @@ def student_feedback_form_detail(course_code):
     roll_no = session['user']
     conn = get_db()
 
-    # Check if previously submitted
+    # Prevent duplicate submission
     existing = conn.execute(
         'SELECT id FROM feedback WHERE Roll_No = ? AND Course_Code = ?',
         (roll_no, course_code)
@@ -1099,23 +1104,25 @@ def student_feedback_form_detail(course_code):
         conn.close()
         return redirect(url_for('student_feedback_form'))
 
-    # Get course + teacher info
+    # ✅ Correct query to fetch teacher of this course
     course_info = conn.execute("""
-        SELECT c.Course_Code, c.Course_Name, 
+        SELECT c.Course_Code, c.Course_Name,
                t.Teacher_ID, t.Name AS Teacher_Name
-        FROM courses c
-        JOIN teacher_courses tc ON c.Course_Code = tc.Course_Code
-        JOIN teachers t ON tc.Teacher_ID = t.Teacher_ID
-        WHERE c.Course_Code = ?
-    """, (course_code,)).fetchone()
+        FROM enrollments e
+        JOIN courses c ON e.Course_Code = c.Course_Code
+        LEFT JOIN teacher_courses tc ON c.Course_Code = tc.Course_Code
+        LEFT JOIN teachers t ON tc.Teacher_ID = t.Teacher_ID
+        WHERE e.Roll_No = ? AND e.Course_Code = ?
+    """, (roll_no, course_code)).fetchone()
 
     conn.close()
 
     if not course_info:
-        flash("Course not found!", "danger")
+        flash("Course or teacher not found!", "danger")
         return redirect(url_for('student_feedback_form'))
-    
+
     return render_template('student_feedback_form.html', course=course_info)
+
 
 
 @app.route('/student/feedback/submit', methods=['POST'])
@@ -1185,7 +1192,7 @@ def submit_feedback():
 # ============ TEACHER FEEDBACK ROUTES ============
 
 @app.route('/teacher/feedback', methods=['GET'])
-def teacher_view_feedback():
+def teacher_feedback_view():
     """Teachers view feedback for their courses only"""
     if 'user' not in session:
         flash('Please login as teacher', 'error')
@@ -1254,7 +1261,7 @@ def teacher_view_feedback():
 # ============ ADMIN FEEDBACK ROUTES ============
 
 @app.route('/admin/feedback', methods=['GET'])
-def admin_view_feedback():
+def admin_feedback_view():
     """Admin views all feedback with teacher/course filter"""
     if 'user' not in session:
         flash('Please login as admin', 'error')

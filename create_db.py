@@ -153,6 +153,13 @@ def init_db():
                 r['Current_Address'], r['Permanent_Address'], r['Home_Phone'], r['Postal_Code'],
                 r['Department'], r['Course_Code'], r['Course_Name']
             ))
+    # ✅ Insert teacher-course mappings automatically
+    cur.execute('SELECT Teacher_ID, Course_Code FROM teachers')
+    teacher_course_rows = cur.fetchall()
+
+    for row in teacher_course_rows:
+        cur.execute('INSERT OR IGNORE INTO teacher_courses (Teacher_ID, Course_Code) VALUES (?, ?)', row)
+
 
 
 

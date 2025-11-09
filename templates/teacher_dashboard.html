@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+
+
+<head>
+  {% block extra_css %}{% endblock %}
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
@@ -40,6 +43,7 @@
       <a href="#"><i class="fa-solid fa-bullhorn"></i> Announcements</a>
       <a href="#"><i class="fa-solid fa-clipboard-check"></i> Attendance</a>
       <a href="#"><i class="fa-solid fa-graduation-cap"></i> Marks</a>
+      <a href="{{ url_for('teacher_feedback_view') }}"><i class="fa-solid fa-calendar-days"></i> View Feedback</a>
       <a href="#"><i class="fa-solid fa-calendar-days"></i> Timetable</a>
     </div>
 

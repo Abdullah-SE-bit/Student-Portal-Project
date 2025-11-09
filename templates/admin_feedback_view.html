@@ -13,9 +13,7 @@
   <body>
     <header>
       <button class="left-btn" id="menuToggle">&#9776;</button>
-
       <h1 class="portal-title"><b>Admin Portal</b></h1>
-
       <div class="user-info">
         <span>{{ session.get('user', 'Admin') }}</span>
         <button class="options-btn" id="optionsToggle">&#8942;</button>
@@ -36,7 +34,7 @@
       <a href="#"><i class="fa-solid fa-building-columns"></i> Student Dept. List</a>
       <a href="#"><i class="fa-solid fa-book-open-reader"></i> Student Courses List</a>
       <a href="#"><i class="fa-solid fa-bullhorn"></i> Announcements</a>
-      <a href="{{ url_for('admin_view_feedback') }}"><i class="fa-solid fa-comments"></i> Feedback</a>
+      <a href="{{ url_for('admin_feedback_view') }}"><i class="fa-solid fa-comments"></i> Feedback</a>
     </div>
 
     <main>
@@ -49,19 +47,11 @@
         <p>Monitor and analyze all course feedback across the institution</p>
       </div>
 
-      <!-- Overall Statistics -->
+      <!-- Overall Statistics (Hiding Avg Ratings) -->
       <div class="stats-grid">
         <div class="stat-card">
           <div class="stat-label">Total Feedback</div>
           <div class="stat-value">{{ stats.total_feedback or 0 }}</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Avg Teacher Rating</div>
-          <div class="stat-value">{{ "%.1f"|format(stats.avg_teacher_rating or 0) }} ⭐</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Avg Teaching Quality</div>
-          <div class="stat-value">{{ "%.1f"|format(stats.avg_teaching_quality or 0) }} ⭐</div>
         </div>
         <div class="stat-card">
           <div class="stat-label">Teachers Evaluated</div>
@@ -76,7 +66,7 @@
       <!-- Filter Section -->
       <div class="filter-section">
         <h3 style="margin-bottom: 15px; color: #333;">🔍 Filter Feedback</h3>
-        <form method="GET" action="{{ url_for('admin_view_feedback') }}">
+        <form method="GET" action="{{ url_for('admin_feedback_view') }}">
           <div class="filter-grid">
             <select name="teacher_id" id="teacher_select" onchange="updateCourseFilter()">
               <option value="all">All Teachers</option>
@@ -106,24 +96,6 @@
             <button type="submit" class="btn-primary">Apply Filter</button>
           </div>
         </form>
-      </div>
-
-      <!-- Teacher-Course Reference -->
-      <div class="filter-section">
-        <h3 style="margin-bottom: 15px; color: #333;">📚 Teacher-Course Reference</h3>
-        <div class="teacher-course-reference">
-          {% set current_teacher = "" %}
-          {% for tc in teacher_courses %}
-            {% if tc.Teacher_ID != current_teacher %}
-              {% if current_teacher != "" %}</div>{% endif %}
-              <div style="margin-bottom: 15px;">
-                <strong>{{ tc.Teacher_Name }}:</strong>
-                {% set current_teacher = tc.Teacher_ID %}
-            {% endif %}
-            <span class="course-tag">{{ tc.Course_Code }}</span>
-          {% endfor %}
-          </div>
-        </div>
       </div>
 
       <!-- Feedback List -->
