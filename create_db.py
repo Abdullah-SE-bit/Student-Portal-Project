@@ -19,6 +19,7 @@ def init_db():
         password TEXT NOT NULL  
     )''')
 
+
     cur.execute('''
     CREATE TABLE IF NOT EXISTS students (
         Roll_No TEXT PRIMARY KEY,
@@ -35,6 +36,7 @@ def init_db():
         Password TEXT
     )
 ''')
+
 
 
     cur.execute('''
@@ -88,6 +90,25 @@ def init_db():
         FOREIGN KEY (Teacher_ID) REFERENCES teachers (Teacher_ID),
         FOREIGN KEY (Course_Code) REFERENCES courses (Course_Code)
     )''')
+
+    # Add timetable table
+    cur.execute('''
+    CREATE TABLE IF NOT EXISTS timetable (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        Teacher_ID TEXT NOT NULL,
+        Course_Code TEXT NOT NULL,
+        Day TEXT NOT NULL,
+        Start_Time TEXT NOT NULL,
+        End_Time TEXT NOT NULL,
+        Room TEXT NOT NULL,
+        Section TEXT NOT NULL,
+        Class_Type TEXT NOT NULL,
+        Week_Number INTEGER DEFAULT 1,
+        FOREIGN KEY (Teacher_ID) REFERENCES teachers(Teacher_ID),
+        FOREIGN KEY (Course_Code) REFERENCES courses(Course_Code)
+    )
+''')
+    
 
     # ---- ADMIN DEFAULT ----
     admin_id = "A123"
@@ -151,3 +172,4 @@ def init_db():
 
 if __name__ == "__main__":
     init_db()
+
