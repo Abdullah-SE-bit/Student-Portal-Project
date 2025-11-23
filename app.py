@@ -243,7 +243,9 @@ def teacher_home():
     )
 
 
-# -------------------- ATTENDANCE ----------------
+from datetime import datetime
+
+# ---------- STUDENT ATTENDANCE (already mostly there) ----------
 @app.route('/student_attendance')
 def student_attendance():
     if 'user' not in session:
@@ -251,11 +253,10 @@ def student_attendance():
 
     roll_no = session['user']
 
-    conn = sqlite3.connect('flake.db')
-    conn.row_factory = sqlite3.Row
+    conn = get_db()
     cur = conn.cursor()
 
-    # Step 1: Get all courses the student is enrolled in
+    # courses for this student
     cur.execute("""
         SELECT c.Course_Code, c.Course_Name
         FROM enrollments e
@@ -264,7 +265,7 @@ def student_attendance():
     """, (roll_no,))
     courses = cur.fetchall()
 
-    # Step 2: Get attendance records for that student
+    # attendance rows
     cur.execute("""
         SELECT Course_Code, Date, Attendance
         FROM attendance
@@ -274,7 +275,6 @@ def student_attendance():
     attendance_records = cur.fetchall()
     conn.close()
 
-    # Step 3: Group attendance by course name and convert to P/A/L
     attendance = {}
     for record in attendance_records:
         course_code = record['Course_Code']
@@ -286,32 +286,249 @@ def student_attendance():
         if course_name not in attendance:
             attendance[course_name] = []
 
-        status = record['Attendance'].strip().lower()
-        if status in ['present', 'p', '1']:
-            short_status = 'P'
-        elif status in ['absent', 'a', '0']:
-            short_status = 'A'
-        elif status in ['leave', 'l']:
-            short_status = 'L'
+        status_raw = (record['Attendance'] or '').strip().lower()
+        if status_raw in ['present', 'p', '1']:
+            short = 'P'
+        elif status_raw in ['absent', 'a', '0']:
+            short = 'A'
+        elif status_raw in ['leave', 'l']:
+            short = 'L'
         else:
-            short_status = '-'
+            short = '-'
 
         date_value = record['Date']
+        # keep as stored string, or normalize if you want
         if isinstance(date_value, str):
             date_value = date_value.split(' ')[0]
-        elif isinstance(date_value, (datetime,)):
-            date_value = date_value.date().isoformat()
+        attendance[course_name].append({'Date': date_value, 'Status': short})
 
-        attendance[course_name].append({
-            'Date': date_value,
-            'Status': short_status
+    return render_template('attendance_S.html',
+                           courses=courses,
+                           attendance=attendance)
+
+
+# ---------- TEACHER ATTENDANCE HOME ----------
+@app.route('/teacher/attendance')
+def teacher_attendance():
+    if 'user' not in session:
+        return redirect(url_for('teacher_login'))
+
+    teacher_id = session.get('Teacher_ID')
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT c.Course_Code, c.Course_Name
+        FROM teacher_courses tc
+        JOIN courses c ON tc.Course_Code = c.Course_Code
+        WHERE tc.Teacher_ID = ?
+    """, (teacher_id,))
+    courses = cur.fetchall()
+    conn.close()
+
+    return render_template('teacher_attendance.html', courses=courses)
+
+
+# ---------- TEACHER TAKE ATTENDANCE ----------
+@app.route('/teacher/attendance/take/<course_code>', methods=['GET', 'POST'])
+def teacher_take_attendance(course_code):
+    if 'user' not in session:
+        return redirect(url_for('teacher_login'))
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    # course info
+    cur.execute("SELECT Course_Code, Course_Name FROM courses WHERE Course_Code = ?", (course_code,))
+    course = cur.fetchone()
+    if not course:
+        conn.close()
+        flash("Course not found", "danger")
+        return redirect(url_for('teacher_attendance'))
+
+    # enrolled students
+    cur.execute("""
+        SELECT s.Roll_No, s.Name
+        FROM enrollments e
+        JOIN students s ON e.Roll_No = s.Roll_No
+        WHERE e.Course_Code = ?
+        ORDER BY s.Roll_No
+    """, (course_code,))
+    students = cur.fetchall()
+
+    selected_date = None
+    selected_class_no = None
+
+    if request.method == 'POST':
+        selected_date = request.form['date']
+        selected_class_no = int(request.form['class_no'])
+
+        # save each student's status
+        for s in students:
+            roll = s['Roll_No']
+            status = request.form.get(f'status_{roll}', 'P')
+
+            # map P/A/L to text if you want
+            if status == 'P':
+                status_text = 'Present'
+            elif status == 'A':
+                status_text = 'Absent'
+            else:
+                status_text = 'Leave'
+
+            # upsert
+            cur.execute("""
+                SELECT 1 FROM attendance
+                WHERE Roll_No=? AND Course_Code=? AND Date=? AND Class_No=?
+            """, (roll, course_code, selected_date, selected_class_no))
+            exists = cur.fetchone()
+
+            if exists:
+                cur.execute("""
+                    UPDATE attendance
+                    SET Attendance=?
+                    WHERE Roll_No=? AND Course_Code=? AND Date=? AND Class_No=?
+                """, (status_text, roll, course_code, selected_date, selected_class_no))
+            else:
+                cur.execute("""
+                    INSERT INTO attendance (Roll_No, Name, Date, Course_Code, Class_No, Attendance)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                """, (roll, s['Name'], selected_date, course_code,
+                      selected_class_no, status_text))
+
+        conn.commit()
+        conn.close()
+        flash("Attendance saved.", "success")
+        return redirect(url_for('teacher_view_attendance', course_code=course_code))
+
+    # GET: default date today, class_no = 1; no pre-status loaded
+    conn.close()
+    students_with_status = [{'Roll_No': s['Roll_No'], 'Name': s['Name'], 'status': 'P'}
+                            for s in students]
+
+    return render_template('teacher_take_attendance.html',
+                           course=course,
+                           students=students_with_status,
+                           selected_date=selected_date,
+                           selected_class_no=selected_class_no)
+
+
+# ---------- TEACHER VIEW ATTENDANCE LIST ----------
+@app.route('/teacher/attendance/view/<course_code>')
+def teacher_view_attendance(course_code):
+    if 'user' not in session:
+        return redirect(url_for('teacher_login'))
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute("SELECT Course_Code, Course_Name FROM courses WHERE Course_Code = ?", (course_code,))
+    course = cur.fetchone()
+    if not course:
+        conn.close()
+        flash("Course not found", "danger")
+        return redirect(url_for('teacher_attendance'))
+
+    cur.execute("""
+        SELECT Date, Class_No
+        FROM attendance
+        WHERE Course_Code=?
+        GROUP BY Date, Class_No
+        ORDER BY Date, Class_No
+    """, (course_code,))
+    sessions = cur.fetchall()
+
+    conn.close()
+    return render_template('teacher_view_attendance.html',
+                           course=course,
+                           sessions=sessions)
+
+
+# ---------- TEACHER EDIT SINGLE SESSION ----------
+@app.route('/teacher/attendance/edit/<course_code>/<date>/<int:class_no>',
+           methods=['GET', 'POST'])
+def teacher_edit_attendance_session(course_code, date, class_no):
+    if 'user' not in session:
+        return redirect(url_for('teacher_login'))
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute("SELECT Course_Code, Course_Name FROM courses WHERE Course_Code = ?", (course_code,))
+    course = cur.fetchone()
+    if not course:
+        conn.close()
+        flash("Course not found", "danger")
+        return redirect(url_for('teacher_attendance'))
+
+    # enrolled students
+    cur.execute("""
+        SELECT s.Roll_No, s.Name
+        FROM enrollments e
+        JOIN students s ON e.Roll_No = s.Roll_No
+        WHERE e.Course_Code = ?
+        ORDER BY s.Roll_No
+    """, (course_code,))
+    students = cur.fetchall()
+
+    if request.method == 'POST':
+        for s in students:
+            roll = s['Roll_No']
+            status = request.form.get(f'status_{roll}', 'P')
+
+            if status == 'P':
+                status_text = 'Present'
+            elif status == 'A':
+                status_text = 'Absent'
+            else:
+                status_text = 'Leave'
+
+            cur.execute("""
+                UPDATE attendance
+                SET Attendance=?
+                WHERE Roll_No=? AND Course_Code=? AND Date=? AND Class_No=?
+            """, (status_text, roll, course_code, date, class_no))
+
+        conn.commit()
+        conn.close()
+        flash("Attendance updated.", "success")
+        return redirect(url_for('teacher_view_attendance', course_code=course_code))
+
+    # GET: load current statuses
+    students_with_status = []
+    for s in students:
+        roll = s['Roll_No']
+        cur.execute("""
+            SELECT Attendance
+            FROM attendance
+            WHERE Roll_No=? AND Course_Code=? AND Date=? AND Class_No=?
+        """, (roll, course_code, date, class_no))
+        r = cur.fetchone()
+        status_raw = (r['Attendance'] if r else 'Present').lower()
+
+        if status_raw.startswith('p'):
+            code = 'P'
+        elif status_raw.startswith('a'):
+            code = 'A'
+        elif status_raw.startswith('l'):
+            code = 'L'
+        else:
+            code = 'P'
+
+        students_with_status.append({
+            'Roll_No': roll,
+            'Name': s['Name'],
+            'status': code
         })
 
-    return render_template(
-        'attendance_S.html',
-        courses=courses,
-        attendance=attendance
-    )
+    conn.close()
+    return render_template('teacher_edit_attendance_session.html',
+                           course=course,
+                           date=date,
+                           class_no=class_no,
+                           students=students_with_status)
+
 
 
 # ------------------ STUDENT INBOX ----------------

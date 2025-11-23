@@ -1,0 +1,60 @@
+{% extends "teacher_dashboard.html" %}
+
+{% block title %}Take Attendance{% endblock %}
+
+{% block content %}
+  <div class="breadcrumb">
+    <span>Home</span> &gt; <span>Attendance</span> &gt; <span>Take</span>
+  </div>
+
+  <div class="card">
+    <h2>Take Attendance – {{ course.Course_Code }} ({{ course.Course_Name }})</h2>
+
+    <form method="post">
+      <div class="form-row">
+        <label for="date">Date:</label>
+        <input type="date" id="date" name="date"
+               value="{{ selected_date or '' }}" required>
+      </div>
+
+      <div class="form-row">
+        <label for="class_no">Class No:</label>
+        <input type="number" id="class_no" name="class_no"
+               value="{{ selected_class_no or 1 }}" min="1" required>
+      </div>
+
+      <hr>
+
+      {% if students %}
+        <table class="styled-table">
+          <thead>
+            <tr>
+              <th>Roll No</th>
+              <th>Name</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in students %}
+              <tr>
+                <td>{{ s.Roll_No }}</td>
+                <td>{{ s.Name }}</td>
+                <td>
+                  <select name="status_{{ s.Roll_No }}">
+                    <option value="P" {% if s.status == 'P' %}selected{% endif %}>Present</option>
+                    <option value="A" {% if s.status == 'A' %}selected{% endif %}>Absent</option>
+                    <option value="L" {% if s.status == 'L' %}selected{% endif %}>Leave</option>
+                  </select>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        <button type="submit" class="btn btn-primary">Save Attendance</button>
+      {% else %}
+        <p>No students enrolled in this course.</p>
+      {% endif %}
+    </form>
+  </div>
+{% endblock %}

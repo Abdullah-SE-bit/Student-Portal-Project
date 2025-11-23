@@ -1,0 +1,44 @@
+{% extends "teacher_dashboard.html" %}
+
+{% block title %}View Attendance{% endblock %}
+
+{% block content %}
+  <div class="breadcrumb">
+    <span>Home</span> &gt; <span>Attendance</span> &gt; <span>View</span>
+  </div>
+
+  <div class="card">
+    <h2>Attendance Records – {{ course.Course_Code }} ({{ course.Course_Name }})</h2>
+
+    {% if sessions %}
+      <table class="styled-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Class No</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for sess in sessions %}
+            <tr>
+              <td>{{ sess.Date }}</td>
+              <td>{{ sess.Class_No }}</td>
+              <td>
+                <a class="btn btn-secondary"
+                   href="{{ url_for('teacher_edit_attendance_session',
+                                    course_code=course.Course_Code,
+                                    date=sess.Date,
+                                    class_no=sess.Class_No) }}">
+                  View / Edit
+                </a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p>No attendance sessions recorded yet for this course.</p>
+    {% endif %}
+  </div>
+{% endblock %}
