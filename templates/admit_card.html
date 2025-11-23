@@ -1,0 +1,82 @@
+{% extends "student_dashboard.html" %}
+
+{% block title %}Admit Card{% endblock %}
+
+{% block content %}
+  <div class="breadcrumb">
+    <span>Home</span> &gt; <span>Admit Card</span>
+  </div>
+
+  <div class="print-btn">
+    <button type="button" onclick="window.print()">Print / Download</button>
+  </div>
+
+  <div class="admit-container">
+    <div class="admit-header">
+      <h2>Examination Admit Card</h2>
+      <p>University Examination Department</p>
+    </div>
+
+    <div class="admit-meta">
+      <div>
+        <span class="admit-label">Student Name:</span>
+        <span>{{ student.Name }}</span>
+      </div>
+      <div>
+        <span class="admit-label">Roll No:</span>
+        <span>{{ student.Roll_No }}</span>
+      </div>
+      <div>
+        <span class="admit-label">Program:</span>
+        <span>{{ degree_name }}</span>
+      </div>
+      <div>
+        <span class="admit-label">Batch:</span>
+        <span>{{ batch }}</span>
+      </div>
+      <div>
+        <span class="admit-label">Section:</span>
+        <span>{{ section }}</span>
+      </div>
+      <div>
+        <span class="admit-label">DOB:</span>
+        <span>{{ student.DOB }}</span>
+      </div>
+    </div>
+
+    <h3>Registered Courses</h3>
+    {% if courses %}
+      <table class="admit-table">
+        <thead>
+          <tr>
+            <th>S.No</th>
+            <th>Course Code</th>
+            <th>Course Title</th>
+            <th>Credit Hours</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in courses %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td>{{ c.Course_Code }}</td>
+              <td>{{ c.Course_Name }}</td>
+              <td>{{ c.Credit_Hr }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p>No registered courses found for this term.</p>
+    {% endif %}
+
+    <div class="admit-footer">
+      <div>
+        <p>Student Signature: _____________________</p>
+      </div>
+      <div>
+        <p>Controller of Examinations: _____________________</p>
+      </div>
+    </div>
+  </div>
+{% endblock %}

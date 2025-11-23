@@ -2,8 +2,11 @@
 
 {% block title %}Course Registration{% endblock %}
 
+{% block extra_css %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='Course_Registraion.css') }}">
+{% endblock %}
+
 {% block content %}
-<link rel="stylesheet" href="{{ url_for('static', filename='Course_Registraion.css') }}">
 
 <!-- Store data in HTML attributes -->
 <div id="appData" 
@@ -30,7 +33,8 @@
 
     <!-- Info Box -->
     <div class="info-box" style="background: #f3e5f5; border-left-color: #7b1fa2; color: #4a148c;">
-        📊 <strong>Your Semester:</strong> <span id="semesterDisplay" style="font-weight: 700; font-size: 16px;"></span>
+        📊 <strong>Your Semester:</strong>
+        <span id="semesterDisplay" style="font-weight: 700; font-size: 16px;"></span>
     </div>
 
     <!-- Course Info Box -->
@@ -86,7 +90,6 @@
 </div>
 
 <script>
-    
     // Read data from HTML attributes (clean JavaScript)
     const appData = document.getElementById('appData');
     const allCourses = JSON.parse(appData.dataset.courses);
@@ -94,18 +97,8 @@
     const passedCourses = JSON.parse(appData.dataset.passed);
     const currentSemester = parseInt(appData.dataset.semester);
     const studentInfo = JSON.parse(appData.dataset.student);
-    
-    let selectedCourses = [...enrolledCourses];
 
-    // 🔍 DEBUG: Check what courses are received
-    console.log('=== DEBUG: COURSES DATA ===');
-    console.log('Total courses:', allCourses.length);
-    console.log('All courses:', allCourses);
-    
-    allCourses.forEach(course => {
-        console.log(`${course.type === 'retake' ? '⚠️ RETAKE' : '📅 CURRENT'} | ${course.code}: ${course.name}`);
-    });
-    console.log('===========================');
+    let selectedCourses = [...enrolledCourses];
 
     // Initialize
     window.addEventListener('DOMContentLoaded', function() {
@@ -117,7 +110,10 @@
     function displayStudentInfo() {
         const semesterDisplay = document.getElementById('semesterDisplay');
         if (semesterDisplay && studentInfo && currentSemester) {
-            semesterDisplay.textContent = 'Semester ' + currentSemester + ' (Batch ' + studentInfo.batch + ', ' + studentInfo.degree_name + ')';
+            semesterDisplay.textContent =
+                'Semester ' + currentSemester +
+                ' (Batch ' + studentInfo.batch +
+                ', ' + studentInfo.degree_name + ')';
         }
     }
 
@@ -133,7 +129,7 @@
 
         noMsg.style.display = 'none';
         let html = '';
-        
+
         for (let i = 0; i < courses.length; i++) {
             const course = courses[i];
             const isEnrolled = enrolledCourses.indexOf(course.code) !== -1;
@@ -145,7 +141,7 @@
             html += '<div class="course-card ' + cardClass + '">';
             html += '  <div class="course-header">';
             html += '    <span class="course-code ' + (isEnrolled ? 'enrolled' : '') + '">' + course.code + '</span>';
-            
+
             if (isRetake) {
                 html += '    <span class="course-type-badge retake">⚠️ RETAKE</span>';
             }
@@ -155,7 +151,7 @@
             if (isEnrolled) {
                 html += '    <span class="enrollment-status">✓ Enrolled</span>';
             }
-            
+
             html += '  </div>';
             html += '  <div class="course-name">' + course.name + '</div>';
             html += '  <div class="course-info">';
@@ -168,7 +164,7 @@
             html += '      <span>' + course.credits + '</span>';
             html += '    </div>';
             html += '  </div>';
-            
+
             if (course.prerequisite) {
                 const prereqClass = prerequisiteMet ? 'met' : '';
                 const prereqLabel = isRetake ? '🔴 Failed:' : '📋 Prerequisite:';
@@ -177,7 +173,7 @@
                 html += '    ' + prereqLabel + ' ' + course.prerequisite + ' ' + prereqStatus;
                 html += '  </div>';
             }
-            
+
             html += '  <div class="course-actions">';
             if (isEnrolled) {
                 html += '    <button class="btn-unenroll" onclick="toggleCourse(\'' + course.code + '\')">Remove</button>';
@@ -191,7 +187,7 @@
             html += '  </div>';
             html += '</div>';
         }
-        
+
         grid.innerHTML = html;
     }
 
@@ -201,10 +197,10 @@
 
         for (let i = 0; i < allCourses.length; i++) {
             const course = allCourses[i];
-            const matchSearch = !search || 
-                course.code.toLowerCase().indexOf(search) !== -1 || 
+            const matchSearch = !search ||
+                course.code.toLowerCase().indexOf(search) !== -1 ||
                 course.name.toLowerCase().indexOf(search) !== -1;
-            
+
             if (matchSearch) {
                 filtered.push(course);
             }
@@ -220,7 +216,7 @@
 
     function toggleCourse(code) {
         const enrolledIndex = enrolledCourses.indexOf(code);
-        
+
         if (enrolledIndex !== -1) {
             enrolledCourses.splice(enrolledIndex, 1);
             const selIndex = selectedCourses.indexOf(code);
@@ -235,7 +231,7 @@
                 selectedCourses.splice(selIndex, 1);
             }
         }
-        
+
         renderCourses(allCourses);
         updateCart();
     }
@@ -258,14 +254,14 @@
         for (let i = 0; i < selectedCourses.length; i++) {
             const courseCode = selectedCourses[i];
             let course = null;
-            
+
             for (let j = 0; j < allCourses.length; j++) {
                 if (allCourses[j].code === courseCode) {
                     course = allCourses[j];
                     break;
                 }
             }
-            
+
             if (course) {
                 html += '<div class="cart-item">';
                 html += '  ' + course.code + ' - ' + course.name;

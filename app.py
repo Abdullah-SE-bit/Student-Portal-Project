@@ -1976,6 +1976,66 @@ def student_marks():
     conn.close()
     return render_template('student_marks.html', reports=course_reports)
 
+@app.route('/admit_card')
+def admit_card():
+    # --- Check login ---
+    if 'user' not in session:
+        flash("Please login first", "warning")
+        return redirect(url_for('student_login'))
+
+    roll_no = session['user']
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    # --- Student info ---
+    cur.execute("""
+        SELECT Roll_No, Name, Gender, DOB
+        FROM students
+        WHERE Roll_No = ?
+    """, (roll_no,))
+    student = cur.fetchone()
+    if not student:
+        conn.close()
+        flash("Student record not found!", "danger")
+        return redirect(url_for('student_home'))
+
+    # --- Registered courses (only those in enrollments) ---
+    cur.execute("""
+        SELECT c.Course_Code, c.Course_Name, c.Credit_Hr
+        FROM enrollments e
+        JOIN courses c ON e.Course_Code = c.Course_Code
+        WHERE e.Roll_No = ?
+        ORDER BY c.Course_Code
+    """, (roll_no,))
+    courses = cur.fetchall()
+
+    conn.close()
+
+    # Optional: derive batch/degree/section from Roll_No same as student_home
+    roll_parts = student['Roll_No'].split('-')
+    batch = roll_parts[1] if len(roll_parts) > 1 else "N/A"
+    degree_code = roll_parts[2] if len(roll_parts) > 2 else "N/A"
+    section = roll_parts[3][0] if len(roll_parts) > 3 else "N/A"
+
+    degree_map = {
+        'SE': 'Software Engineering',
+        'AI': 'Artificial Intelligence',
+        'DS': 'Data Science',
+        'CY': 'Cyber Security'
+    }
+    degree_name = degree_map.get(degree_code, degree_code)
+
+    return render_template(
+        'admit_card.html',
+        student=student,
+        batch=batch,
+        degree_name=degree_name,
+        section=section,
+        courses=courses
+    )
+
+
     
 # ------------------ RUN SERVER ------------------
 if __name__ == '__main__':
