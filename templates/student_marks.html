@@ -1,0 +1,64 @@
+{% extends "student_dashboard.html" %}
+
+{% block title %}My Marks{% endblock %}
+
+{% block content %}
+  <div class="breadcrumb"><span>Home</span> &gt; <span>Marks</span></div>
+  <div class="page-header"><h2>My Marks</h2></div>
+
+  {% for rep in reports %}
+    <div class="course-info-box">
+      <div class="course-info-grid">
+        <div>
+          <div class="course-info-label">Course</div>
+          <div class="course-info-value">{{ rep.course }}</div>
+        </div>
+        <div>
+          <div class="course-info-label">Total Obtained / Possible</div>
+          <div class="course-info-value">
+            {{ rep.total_obtained }} / {{ rep.total_possible }}
+            {% if rep.percentage is not none %} ({{ rep.percentage }}%) {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:15px;">
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Category</th>
+                <th>Title</th>
+                <th style="text-align:center">Obtained</th>
+                <th style="text-align:center">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if rep.items %}
+                {% for it in rep["items"] %}
+                  <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ it.category }}</td>
+                    <td>{{ it.title }}</td>
+                    <td style="text-align:center">
+                      {{ it.obtained if it.obtained is not none else '-' }}
+                    </td>
+                    <td style="text-align:center">{{ it.total }}</td>
+                  </tr>
+                {% endfor %}
+              {% else %}
+                <tr>
+                  <td colspan="5"
+                      style="padding:40px; text-align:center; color:#999;">
+                    No marks entered yet
+                  </td>
+                </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+{% endblock %}

@@ -1,0 +1,59 @@
+{% extends "teacher_dashboard.html" %}
+
+{% block title %}Teacher - Marks{% endblock %}
+
+{% block content %}
+  <div class="breadcrumb"><span>Home</span> &gt; <span>Marks</span></div>
+  <div class="page-header"><h2>Manage Marks</h2></div>
+
+  <div class="button-container" style="margin-bottom:15px;">
+    <a class="btn-primary" href="{{ url_for('teacher_create_mark_item') }}">+ Create Mark Item</a>
+  </div>
+
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Course</th>
+          <th>Category</th>
+          <th>Title</th>
+          <th>Total</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if items %}
+          {% for it in items %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td>{{ it[1] }}</td>
+              <td>{{ it[2] }}</td>
+              <td>{{ it[4] or (it[2] ~ ' ' ~ it[3]) }}</td>
+              <td style="text-align:center">{{ it[5] }}</td>
+              <td style="text-align:center">
+                <a class="btn-primary" href="{{ url_for('teacher_add_marks', item_id=it[0]) }}">Enter Marks</a>
+                <a class="btn-primary" href="{{ url_for('teacher_edit_mark_item', item_id=it[0]) }}">Edit</a>
+                <form method="post"
+                      action="{{ url_for('teacher_delete_mark_item', item_id=it[0]) }}"
+                      style="display:inline;">
+                  <button class="btn-primary"
+                          onclick="return confirm('Delete this item and its marks?')">
+                    Delete
+                  </button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="6"
+                style="padding:40px; text-align:center; color:#999;">
+              No mark items yet
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

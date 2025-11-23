@@ -1,0 +1,27 @@
+{% extends "teacher_dashboard.html" %}
+
+{% block title %}Edit Item{% endblock %}
+
+{% block content %}
+  <div class="breadcrumb"><span>Home</span> &gt; <span>Edit Item</span></div>
+  <div class="page-header"><h2>Edit Item</h2></div>
+
+  <div class="table-container" style="padding:20px;">
+    <form method="post">
+      <div class="form-group">
+        <label>Title</label>
+        <input type="text" name="title" value="{{ item[4] }}" />
+      </div>
+
+      <div class="form-group">
+        <label>Total Marks</label>
+        <input type="number" name="total" min="1" value="{{ item[5] }}" required />
+      </div>
+
+      <div class="button-container">
+        <button class="btn-primary" type="submit">Save</button>
+        <a class="btn-secondary" href="{{ url_for('teacher_marks') }}">Cancel</a>
+      </div>
+    </form>
+  </div>
+{% endblock %}

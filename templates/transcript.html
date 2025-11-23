@@ -1,36 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
-  {% block extra_css %}{% endblock %}
-
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='portal_template.css') }}"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
-    />
-    <link
-      rel="icon"
-      type="image/png"
-      href="{{ url_for('static', filename='logo.png') }}"
-    />
-    <title>Student Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='portal_template.css') }}" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='transcript.css') }}">
+    <title>Transcript - {{ student.Name if student else roll }}</title>
   </head>
 
   <body>
+    <!-- ===== HEADER ===== -->
     <header>
-      <!-- Left button (menu) -->
       <button class="left-btn" id="menuToggle">&#9776;</button>
-
       <h1 class="portal-title"><b>Student Portal</b></h1>
 
-      <!-- Right side: user info -->
       <div class="user-info">
-        <span>Welcome, {{ session.get('user_name', 'Student') }}</span>
+        <span>{{ student.Name if student else session.get('user', 'Student') }}</span>
         <button class="options-btn" id="optionsToggle">&#8942;</button>
         <div class="dropdown" id="optionsMenu">
           <a href="#"><i class="fa-solid fa-pen-to-square"></i> Change Password</a>
@@ -39,14 +26,14 @@
       </div>
     </header>
 
-    <!-- Side Navigation Panel -->
+    <!-- ===== SIDE PANEL ===== -->
     <div class="side-panel" id="sidePanel">
       <button class="inside-btn" id="insideMenuToggle">&#9776;</button>
 
       <a href="{{ url_for('student_home') }}"><i class="fa-solid fa-house"></i> Home</a>
       <a href="{{ url_for('course_registration') }}"><i class="fa-solid fa-file-lines"></i> Course Registration</a>
       <a href="{{ url_for('student_attendance') }}"><i class="fa-solid fa-list-check"></i> Attendance</a>
-      <a href="{{ url_for('student_marks') }}"><i class="fa-solid fa-list-check"></i> Marks</a>
+      <a href="#"><i class="fa-solid fa-list-check"></i> Marks</a>
       <a href="#"><i class="fa-solid fa-file-lines"></i> Print Admit Card</a>
       <a href="{{ url_for('transcript') }}"><i class="fa-solid fa-file-lines"></i> Transcript</a>
       <a href="#"><i class="fa-solid fa-coins"></i> Fee Details</a>
@@ -54,17 +41,69 @@
       <a href="{{ url_for('student_inbox') }}"><i class="fa-solid fa-inbox"></i> Inbox</a>
       <a href="#"><i class="fa-solid fa-bullhorn"></i> Announcements</a>
       <a href="{{ url_for('student_study_plan') }}"><i class="fa-solid fa-calendar-days"></i> Tentative Study Plan</a>
-
       <a href="#"><i class="fa-solid fa-clock"></i> Timetable</a>
     </div>
 
-    <main>
-      {% block content %}
-      <!-- Future teacher dashboard pages will extend this block -->
-      {% endblock %}
+    <!-- ===== MAIN CONTENT ===== -->
+    <main class="container">
+      <div class="breadcrumb">
+        <span style="color: #666;">Home</span> &gt; <span style="color: #333;">Transcript</span>
+      </div>
+
+      <section class="student-card">
+        <div class="student-top">
+          <div>
+            <div><strong>Roll No:</strong> {{ roll }}</div>
+            <div><strong>Name:</strong> {{ student.Name if student else '—' }}</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="transcript">
+        <div class="transcript-header">Student Transcript</div>
+
+        <div class="semesters-grid">
+          {% for sem in semesters %}
+          <div class="semester-card">
+            <div class="semester-title">{{ sem.term }}
+              <div class="semester-summary">Cr. Att:{{ sem.total_credits }} &nbsp; Cr. Ernd:{{ sem.total_credits }} &nbsp; SGPA:{{ '%.2f'|format(sem.sgpa) }}</div>
+            </div>
+
+            <table class="course-table">
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Course Name</th>
+                  <th>CrdHrs</th>
+                  <th>Grade</th>
+                  <th>Points</th>
+                  <th>Type</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for c in sem.courses %}
+                <tr>
+                  <td>{{ c.Course_Code }}</td>
+                  <td class="course-name">{{ c.Course_Name }}</td>
+                  <td class="center">{{ c.CrdHrs }}</td>
+                  <td class="center">{{ c.Grade }}</td>
+                  <td class="center">{{ '%.2f'|format(c.Points) }}</td>
+                  <td>{{ c.Type or 'Core' }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% endfor %}
+        </div>
+
+        <div class="cgpa-row">
+          <div><strong>CGPA:</strong> {{ '%.2f'|format(cgpa) }}</div>
+        </div>
+      </section>
     </main>
 
-    <!-- ========== JAVASCRIPT ========== -->
+    <!-- ===== JAVASCRIPT ===== -->
     <script>
       // ----- RIGHT OPTIONS MENU -----
       const optionsToggle = document.getElementById('optionsToggle');
@@ -92,11 +131,9 @@
         sidePanel.classList.toggle('open');
       }
 
-      // Open/close panel with both buttons
       menuToggle.addEventListener('click', togglePanel);
       insideMenuToggle.addEventListener('click', togglePanel);
 
-      // Close when clicking outside
       window.addEventListener('click', (e) => {
         if (!sidePanel.contains(e.target) && !menuToggle.contains(e.target)) {
           sidePanel.classList.remove('open');

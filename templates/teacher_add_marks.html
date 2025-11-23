@@ -1,0 +1,50 @@
+{% extends "teacher_dashboard.html" %}
+
+{% block title %}Enter Marks - {{ item[4] or (item[2] ~ ' ' ~ item[3]) }}{% endblock %}
+
+{% block content %}
+  <div class="breadcrumb">
+    <span>Home</span> &gt; <span>Enter Marks</span>
+  </div>
+
+  <div class="page-header">
+    <h2>Enter Marks - {{ item[4] or (item[2] ~ ' ' ~ item[3]) }}</h2>
+    <p>Course: {{ item[1] }} | Total: {{ item[5] }}</p>
+  </div>
+
+  <div class="table-container" style="padding:20px;">
+    <form method="post">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Roll No</th>
+            <th>Name</th>
+            <th style="text-align:center">Obtained</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in students %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td>{{ s[0] }}</td>
+              <td>{{ s[1] }}</td>
+              <td style="text-align:center">
+                <input type="number"
+                       name="obtained_{{ s[0] }}"
+                       min="0"
+                       max="{{ item[5] }}"
+                       value="{{ existing_marks.get(s[0], '') }}" />
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <div style="margin-top:15px;" class="button-container">
+        <button class="btn-primary" type="submit">Save Marks</button>
+        <a class="btn-secondary" href="{{ url_for('teacher_marks') }}">Back</a>
+      </div>
+    </form>
+  </div>
+{% endblock %}

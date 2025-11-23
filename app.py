@@ -4,6 +4,10 @@ from datetime import datetime
 import re
 from flask_socketio import SocketIO, emit, join_room
 
+import pandas as pd
+import sqlite3
+import math
+
 def get_db():
     """Create a database connection with row factory for dictionary-like access"""
     conn = sqlite3.connect('flake.db')
@@ -1404,6 +1408,356 @@ def handle_send_message(data):
 
     emit('receive_message', msg_data, to=receiver_id)
     emit('receive_message', msg_data, to=sender_id)  # echo to sender too
+
+
+
+@app.route('/transcript')
+def transcript():
+    # --- Check if student is logged in ---
+    if 'user' not in session:
+        flash("Please login first", "warning")
+        return redirect(url_for('student_login'))
+
+    roll_no = session['user']  # use same session variable as feedback/login
+    conn = get_db()
+
+    # --- Get student info ---
+    student = conn.execute(
+        "SELECT Roll_No, Name FROM students WHERE Roll_No = ?",
+        (roll_no,)
+    ).fetchone()
+
+    if not student:
+        flash("Student record not found!", "danger")
+        return redirect(url_for('student_home'))
+
+    # --- Fetch passed courses for this student ---
+    rows = conn.execute("""
+        SELECT pc.Course_Code, c.Course_Name, c.Credit_Hr, pc.Grade
+        FROM passed_courses pc
+        JOIN courses c ON pc.Course_Code = c.Course_Code
+        WHERE pc.Roll_No = ?
+        ORDER BY pc.Course_Code
+    """, (roll_no,)).fetchall()
+
+    # --- Map course codes to semesters ---
+    # Example: use course code to determine semester (simple heuristic)
+    # e.g., Course_Code 'CS101' -> 'Semester 1', 'CS201' -> 'Semester 2', etc.
+    def course_to_semester(code):
+        match = re.search(r'(\d+)', code)
+        if match:
+            num_str = match.group(1)
+            if num_str and num_str[0].isdigit():  # Safety check
+                sem = int(num_str[0])  # Extract first digit as semester
+                return f"Semester {sem}"
+        return "Unknown"
+
+    semesters_dict = {}
+    for r in rows:
+        sem = course_to_semester(r['Course_Code'])
+        if sem not in semesters_dict:
+            semesters_dict[sem] = []
+        # Map grade to points
+        GRADE_POINTS = {
+            'A+':4.00, 'A':4.00, 'A-':3.67, 'B+':3.33, 'B':3.00, 'B-':2.67,
+            'C+':2.33, 'C':2.00, 'C-':1.67, 'D':1.00, 'F':0.00,
+            'S':0.00, 'NC':0.00
+        }
+        points = GRADE_POINTS.get(r['Grade'], 0.0)
+        semesters_dict[sem].append({
+            'Course_Code': r['Course_Code'],
+            'Course_Name': r['Course_Name'],
+            'Section': '',        # optional, blank
+            'CrdHrs': r['Credit_Hr'],
+            'Grade': r['Grade'],
+            'Points': points,
+            'Type': 'Core',
+            'Remarks': ''
+        })
+
+    # --- Compute SGPA per semester and total CGPA ---
+    semesters = []
+    total_weighted = 0
+    total_credits = 0
+    for sem_name, courses in semesters_dict.items():
+        sem_credits = sum(c['CrdHrs'] for c in courses)
+        sem_weighted = sum(c['CrdHrs']*c['Points'] for c in courses)
+        sgpa = round((sem_weighted/sem_credits if sem_credits else 0.0) + 1e-9, 2)
+        semesters.append({
+            'term': sem_name,
+            'courses': courses,
+            'sgpa': sgpa,
+            'total_credits': sem_credits
+        })
+        total_weighted += sem_weighted
+        total_credits += sem_credits
+
+    cgpa = round((total_weighted / total_credits if total_credits else 0.0) + 1e-9, 2)
+
+    conn.close()
+
+    return render_template(
+        'transcript.html',
+        roll=roll_no,
+        student=student,
+        semesters=semesters,
+        cgpa=cgpa
+    )
+
+
+# ============ TEACHER MARKS MANAGEMENT ============
+
+DB = 'flake.db'
+
+CATEGORIES = ["Assignment", "Quiz", "Sessional-I", "Sessional-II", "Project", "Final Exam"]
+
+def get_db_conn():
+    return sqlite3.connect(DB)
+
+@app.route('/teacher/marks')
+def teacher_marks():
+    if 'user' not in session:
+        flash('Please login as teacher', 'error')
+        return redirect(url_for('teacher_login'))
+
+    teacher_id = session.get('user')
+    conn = get_db_conn()
+    cur = conn.cursor()
+
+    # Fetch teacher courses
+    cur.execute('SELECT Course_Code FROM teacher_courses WHERE Teacher_ID=?', (teacher_id,))
+    courses = [r[0] for r in cur.fetchall()]
+
+    # Fetch mark items for these courses
+    if courses:
+        placeholder = ','.join('?'*len(courses))
+        cur.execute(f'''
+            SELECT id, Course_Code, Category, Item_No, Title, Total, Teacher_ID, Created_Date
+            FROM mark_items
+            WHERE Course_Code IN ({placeholder})
+            ORDER BY Course_Code, Category, Item_No
+        ''', courses)
+        items = cur.fetchall()
+    else:
+        items = []
+
+    conn.close()
+    return render_template('teacher_marks.html', items=items)
+
+@app.route('/teacher/marks/create', methods=['GET','POST'])
+def teacher_create_mark_item():
+    if 'user' not in session:
+        flash('Please login as teacher', 'error')
+        return redirect(url_for('teacher_login'))
+
+    teacher_id = session.get('user')
+    conn = get_db_conn()
+    cur = conn.cursor()
+
+    # teacher courses for the dropdown
+    cur.execute('SELECT Course_Code FROM teacher_courses WHERE Teacher_ID=?', (teacher_id,))
+    course_rows = cur.fetchall()
+    courses = [r[0] for r in course_rows]
+
+    if request.method == 'POST':
+        course = request.form['course']
+        category = request.form['category']
+        item_no = int(request.form.get('item_no', 1))
+        title = request.form.get('title') or f"{category} {item_no}"
+        total = int(request.form['total'])
+
+        cur.execute('''
+            INSERT INTO mark_items (Course_Code, Category, Item_No, Title, Total, Teacher_ID)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (course, category, item_no, title, total, teacher_id))
+        conn.commit()
+        conn.close()
+        flash('Mark item created', 'success')
+        return redirect(url_for('teacher_marks'))
+
+    conn.close()
+    return render_template('teacher_create_mark_item.html', courses=courses, categories=CATEGORIES)
+
+@app.route('/teacher/marks/add/<int:item_id>', methods=['GET','POST'])
+def teacher_add_marks(item_id):
+    if 'user' not in session:
+        flash('Please login as teacher', 'error')
+        return redirect(url_for('teacher_login'))
+
+    conn = get_db_conn()
+    cur = conn.cursor()
+
+    # fetch item metadata
+    cur.execute('SELECT id, Course_Code, Category, Item_No, Title, Total FROM mark_items WHERE id=?', (item_id,))
+    item = cur.fetchone()
+    if not item:
+        flash('Mark item not found', 'error')
+        return redirect(url_for('teacher_marks'))
+
+    course_code = item[1]
+
+    # fetch students enrolled in the course
+    cur.execute('''
+        SELECT s.Roll_No, s.Name
+        FROM enrollments e
+        JOIN students s ON e.Roll_No = s.Roll_No
+        WHERE e.Course_Code = ?
+        ORDER BY s.Roll_No
+    ''', (course_code,))
+    students = cur.fetchall()
+
+    if request.method == 'POST':
+        # expected inputs named obtained_<roll_no>
+        for roll, _name in students:
+            key = f'obtained_{roll}'
+            val = request.form.get(key, '').strip()
+            obtained = int(val) if val != '' else None
+
+            # insert or update student_marks
+            cur.execute('''
+                SELECT id FROM student_marks WHERE mark_item_id=? AND Roll_No=?
+            ''', (item_id, roll))
+            existing = cur.fetchone()
+            if existing:
+                cur.execute('UPDATE student_marks SET Obtained=? WHERE id=?', (obtained, existing[0]))
+            else:
+                cur.execute('INSERT INTO student_marks (mark_item_id, Roll_No, Obtained) VALUES (?, ?, ?)',
+                            (item_id, roll, obtained))
+        conn.commit()
+        conn.close()
+        flash('Marks saved for item', 'success')
+        return redirect(url_for('teacher_marks'))
+
+    # load existing marks
+    cur.execute('SELECT Roll_No, Obtained FROM student_marks WHERE mark_item_id=?', (item_id,))
+    existing_marks = {r[0]: r[1] for r in cur.fetchall()}
+
+    conn.close()
+    return render_template('teacher_add_marks.html', item=item, students=students, existing_marks=existing_marks)
+
+@app.route('/teacher/marks/edit/<int:item_id>', methods=['GET','POST'])
+def teacher_edit_mark_item(item_id):
+    if 'user' not in session:
+        flash('Please login as teacher', 'error')
+        return redirect(url_for('login'))
+
+    conn = get_db_conn()
+    cur = conn.cursor()
+    cur.execute('SELECT id, Course_Code, Category, Item_No, Title, Total FROM mark_items WHERE id=?', (item_id,))
+    item = cur.fetchone()
+    if not item:
+        flash('Not found', 'error')
+        return redirect(url_for('teacher_marks'))
+
+    if request.method == 'POST':
+        title = request.form.get('title')
+        total = int(request.form.get('total'))
+        cur.execute('UPDATE mark_items SET Title=?, Total=? WHERE id=?', (title, total, item_id))
+        conn.commit()
+        conn.close()
+        flash('Item updated', 'success')
+        return redirect(url_for('teacher_marks'))
+
+    conn.close()
+    return render_template('teacher_edit_mark_item.html', item=item)
+
+@app.route('/teacher/marks/delete/<int:item_id>', methods=['POST'])
+def teacher_delete_mark_item(item_id):
+    if 'user' not in session :
+        flash('Please login as teacher', 'error')
+        return redirect(url_for('teacher_login'))
+
+    conn = get_db_conn()
+    cur = conn.cursor()
+    # delete student marks then item
+    cur.execute('DELETE FROM student_marks WHERE mark_item_id=?', (item_id,))
+    cur.execute('DELETE FROM mark_items WHERE id=?', (item_id,))
+    conn.commit()
+    conn.close()
+    flash('Item and its marks deleted', 'success')
+    return redirect(url_for('teacher_marks'))
+
+
+
+@app.route('/student/marks')
+def student_marks():
+    # Same pattern as student_attendance
+    if 'user' not in session:
+        return redirect(url_for('student_login'))
+
+    roll = session['user']
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    # Get all enrolled courses
+    cur.execute('SELECT Course_Code FROM enrollments WHERE Roll_No=?', (roll,))
+    courses = [r['Course_Code'] for r in cur.fetchall()]
+
+    course_reports = []
+
+    for course in courses:
+        # get mark items for course
+        cur.execute('''
+            SELECT id, Category, Item_No, Title, Total
+            FROM mark_items
+            WHERE Course_Code=?
+            ORDER BY Category, Item_No
+        ''', (course,))
+        items = cur.fetchall()
+
+        entries = []
+        for it in items:
+            item_id = it['id']
+            category = it['Category']
+            item_no = it['Item_No']
+            title = it['Title']
+            total = it['Total']
+
+            cur.execute(
+                'SELECT Obtained FROM student_marks WHERE mark_item_id=? AND Roll_No=?',
+                (item_id, roll)
+            )
+            r = cur.fetchone()
+            obtained = r['Obtained'] if r else None
+
+            entries.append({
+                'id': item_id,
+                'category': category,
+                'title': title,
+                'item_no': item_no,
+                'total': total,
+                'obtained': obtained
+            })
+
+        category_agg = {}
+        total_possible = 0
+        total_obtained = 0
+
+        for e in entries:
+            total_possible += e['total'] or 0
+            if e['obtained'] is not None:
+                total_obtained += e['obtained']
+
+            cat = e['category']
+            if cat not in category_agg:
+                category_agg[cat] = {'possible': 0, 'obtained': 0}
+
+            category_agg[cat]['possible'] += e['total'] or 0
+            category_agg[cat]['obtained'] += e['obtained'] or 0
+
+        course_reports.append({
+            'course': course,
+            'items': entries,
+            'category_agg': category_agg,
+            'total_possible': total_possible,
+            'total_obtained': total_obtained,
+            'percentage': round(total_obtained / total_possible * 100, 2)
+                          if total_possible > 0 else None
+        })
+
+    conn.close()
+    return render_template('student_marks.html', reports=course_reports)
 
     
 # ------------------ RUN SERVER ------------------

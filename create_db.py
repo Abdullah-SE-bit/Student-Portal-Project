@@ -78,10 +78,33 @@ def init_db():
         Class_No INTEGER, Attendance TEXT
     )''')
 
-    cur.execute('''CREATE TABLE IF NOT EXISTS marks (
-        Roll_No TEXT, Name TEXT, Date TEXT, Course_Code TEXT,
-        Heading TEXT, Total INTEGER, Obtained INTEGER
-    )''')
+    # --- Replace old marks table with these new tables ---
+    cur.execute('''DROP TABLE IF EXISTS marks''')  # remove old table if present
+
+    cur.execute('''
+    CREATE TABLE IF NOT EXISTS mark_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        Course_Code TEXT NOT NULL,
+        Category TEXT NOT NULL,       -- Assignment, Quiz, Sessional-I, etc.
+        Item_No INTEGER DEFAULT 1,    -- e.g., Quiz 1 -> 1
+        Title TEXT,                   -- user-friendly name (e.g., "Quiz 1")
+        Total INTEGER NOT NULL,       -- total marks for this item
+        Teacher_ID TEXT,              -- who created it
+        Created_Date TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+    ''')
+
+    cur.execute('''
+    CREATE TABLE IF NOT EXISTS student_marks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        mark_item_id INTEGER NOT NULL,
+        Roll_No TEXT NOT NULL,
+        Obtained INTEGER,
+        FOREIGN KEY(mark_item_id) REFERENCES mark_items(id),
+        FOREIGN KEY(Roll_No) REFERENCES students(Roll_No)
+    )
+    ''')
+
 
     cur.execute('''CREATE TABLE IF NOT EXISTS teacher_courses (
         Teacher_ID TEXT, Course_Code TEXT,
