@@ -873,6 +873,141 @@ def inbox_A():
         sections=sections
     )
 
+
+# -------------------- TEACHER TIMETABLE --------------------
+@app.route('/teacher_timetable')
+def teacher_timetable():
+    """Display teacher's class schedule - Only for logged-in teachers"""
+    if 'user' not in session:
+        return redirect(url_for('teacher_login'))
+    
+    tid = session['user']
+    
+    try:
+        conn = sqlite3.connect('flake.db')
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+        
+        # Get teacher information
+        cur.execute("""
+            SELECT Teacher_ID, Name, Gender, DOB, CNIC, Email, Mobile_No,
+                   Current_Address, Permanent_Address, Home_Phone, Postal_Code,
+                   Department, Course_Code, Course_Name
+            FROM teachers
+            WHERE Teacher_ID = ?
+        """, (tid,))
+        teacher_row = cur.fetchone()
+        
+        if not teacher_row:
+            conn.close()
+            flash("Teacher not found", "danger")
+            return redirect(url_for('teacher_home'))
+        
+        # Convert to dictionary
+        teacher = dict(teacher_row)
+        
+        # Get timetable for this teacher
+        cur.execute("""
+            SELECT 
+                t.Day,
+                t.Start_Time,
+                t.End_Time,
+                t.Room,
+                t.Section,
+                t.Class_Type,
+                t.Course_Code,
+                c.Course_Name,
+                c.Credit_Hr
+            FROM timetable t
+            JOIN courses c ON t.Course_Code = c.Course_Code
+            WHERE t.Teacher_ID = ?
+            ORDER BY 
+                CASE t.Day
+                    WHEN 'Monday' THEN 1
+                    WHEN 'Tuesday' THEN 2
+                    WHEN 'Wednesday' THEN 3
+                    WHEN 'Thursday' THEN 4
+                    WHEN 'Friday' THEN 5
+                    WHEN 'Saturday' THEN 6
+                END,
+                t.Start_Time
+        """, (tid,))
+        
+        schedule_rows = cur.fetchall()
+        
+        # Get student enrollment count
+        cur.execute("""
+            SELECT COUNT(DISTINCT Roll_No) as count
+            FROM enrollments
+            WHERE Course_Code = ?
+        """, (teacher['Course_Code'],))
+        
+        enrollment_result = cur.fetchone()
+        student_count = enrollment_result['count'] if enrollment_result else 0
+        
+        conn.close()
+        
+        # Organize schedule by day
+        schedule = {}
+        for row in schedule_rows:
+            day = row['Day']
+            if day not in schedule:
+                schedule[day] = []
+            
+            schedule[day].append({
+                'start_time': row['Start_Time'],
+                'end_time': row['End_Time'],
+                'course_code': row['Course_Code'],
+                'course_name': row['Course_Name'],
+                'room': row['Room'],
+                'section': row['Section'],
+                'type': row['Class_Type'],
+                'credits': row['Credit_Hr'],
+                'students': student_count
+            })
+        
+        # Calculate statistics
+        total_classes = len(schedule_rows)
+        
+        # Calculate total hours
+        total_hours = 0
+        for classes in schedule.values():
+            for cls in classes:
+                start_parts = cls['start_time'].split(':')
+                end_parts = cls['end_time'].split(':')
+                start_minutes = int(start_parts[0]) * 60 + int(start_parts[1])
+                end_minutes = int(end_parts[0]) * 60 + int(end_parts[1])
+                hours = (end_minutes - start_minutes) / 60
+                total_hours += hours
+        
+        statistics = {
+            'total_classes': total_classes,
+            'total_hours': round(total_hours, 1),
+            'total_students': student_count
+        }
+        
+        return render_template(
+            'teacher_timetable.html',
+            teacher=teacher,
+            schedule=schedule,
+            statistics=statistics,
+            user=tid,
+            user_name=teacher['Name']
+        )
+    
+    except Exception as e:
+        print(f"Error loading teacher timetable: {e}")
+        import traceback
+        traceback.print_exc()
+        flash("Error loading timetable", "danger")
+        return redirect(url_for('teacher_home'))
+    
+
+    # ADD THIS TEMPORARILY - Put it right after your teacher_timetable route
+@app.route('/test_timetable')
+def test_timetable():
+    return "Timetable route is working!"
+
 # ------------------- Course Registration ---------------------
 # Add these utility functions and routes to your app.py file
 
