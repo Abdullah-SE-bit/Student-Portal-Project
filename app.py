@@ -3028,8 +3028,153 @@ def announcement_submit(ann_id):
     conn.commit()
     conn.close()
     return jsonify({"status": "ok"})
+@app.route('/student_timetable')
+def student_timetable():
+    if 'user' not in session:
+        return redirect(url_for('student_login'))
 
-    
+    rollno = session['user']
+
+    try:
+        conn = sqlite3.connect('flake.db')
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+
+        # --- Get student info ---
+        cur.execute("SELECT Roll_No, Name FROM students WHERE Roll_No = ?", (rollno,))
+        student = cur.fetchone()
+        if not student:
+            conn.close()
+            flash("Student not found", "danger")
+            return redirect(url_for('student_home'))
+
+        # --- Get student's section from Roll_No ---
+        # Example formats:
+        #   F-22-SE-A-3001  -> section = "Section A"
+        #   M-22SE-A-3001   -> section = "Section A"
+        section = None
+        parts = rollno.split('-')
+
+        # Case 1: F-22-SE-A-3001 → section letter is parts[3]
+        if len(parts) >= 4:
+            section_part = parts[3]
+        # Case 2: older format M-22SE-A-3001 → section in parts[2]
+        elif len(parts) >= 3:
+            section_part = parts[2]
+        else:
+            section_part = ''
+
+        letters = ''.join(ch for ch in section_part if ch.isalpha())
+        if letters:
+            section = f"Section {letters.upper()}"
+
+        # Fallback default
+        if not section:
+            section = "Section A"
+
+        # DEBUG: show what section we computed
+        print("DEBUG [student_timetable] Roll_No:", rollno)
+        print("DEBUG [student_timetable] computed section:", section)
+
+        # --- Get enrolled course codes for this student ---
+        cur.execute("SELECT Course_Code FROM enrollments WHERE Roll_No = ?", (rollno,))
+        enrolled_courses = [row['Course_Code'] for row in cur.fetchall()]
+
+        # DEBUG: show enrolled courses
+        print("DEBUG [student_timetable] enrolled_courses:", enrolled_courses)
+
+        if not enrolled_courses:
+            conn.close()
+            flash("You are not enrolled in any courses.", "info")
+            return render_template(
+                'student_timetable.html',
+                student=student,
+                schedule={},
+                statistics={'total_classes': 0, 'total_hours': 0, 'total_students': 0},
+                user=rollno,
+                username=student['Name']
+            )
+
+        # --- Build timetable query for this student (by section + enrolled courses) ---
+        placeholders = ','.join('?' for _ in enrolled_courses)
+        query = f"""
+            SELECT t.Day, t.Start_Time, t.End_Time, t.Room, t.Section, t.Class_Type,
+                   t.Course_Code, c.Course_Name
+            FROM timetable t
+            JOIN courses c ON t.Course_Code = c.Course_Code
+            WHERE t.Section = ? AND t.Course_Code IN ({placeholders})
+            ORDER BY
+                CASE t.Day
+                    WHEN 'Monday' THEN 1
+                    WHEN 'Tuesday' THEN 2
+                    WHEN 'Wednesday' THEN 3
+                    WHEN 'Thursday' THEN 4
+                    WHEN 'Friday' THEN 5
+                    WHEN 'Saturday' THEN 6
+                END,
+                t.Start_Time
+        """
+        params = [section] + enrolled_courses
+        cur.execute(query, params)
+        rows = cur.fetchall()
+
+        # DEBUG: show how many rows we got and a sample
+        print("DEBUG [student_timetable] timetable rows count:", len(rows))
+        for r in rows[:5]:
+            print("DEBUG [student_timetable] row:", dict(r))
+
+        # --- Organize schedule by day ---
+        schedule = {}
+        for row in rows:
+            day = row['Day']
+            if day not in schedule:
+                schedule[day] = []
+            schedule[day].append({
+                'start_time': row['Start_Time'],
+                'end_time': row['End_Time'],
+                'course_code': row['Course_Code'],
+                'course_name': row['Course_Name'],
+                'room': row['Room'],
+                'section': row['Section'],
+                'type': row['Class_Type'],
+                'students': ''
+            })
+
+        # --- Statistics (total classes & hours) ---
+        total_classes = sum(len(v) for v in schedule.values())
+        total_hours = 0
+        for classes in schedule.values():
+            for cls in classes:
+                s_h, s_m = map(int, cls['start_time'].split(':'))
+                e_h, e_m = map(int, cls['end_time'].split(':'))
+                start_min = s_h * 60 + s_m
+                end_min = e_h * 60 + e_m
+                total_hours += (end_min - start_min) / 60.0
+
+        statistics = {
+            'total_classes': total_classes,
+            'total_hours': round(total_hours, 1),
+            'total_students': 0
+        }
+
+        conn.close()
+        return render_template(
+            'student_timetable.html',
+            student=student,
+            schedule=schedule,
+            statistics=statistics,
+            user=rollno,
+            username=student['Name']
+        )
+
+    except Exception as e:
+        print("Error loading student timetable:", e)
+        import traceback
+        traceback.print_exc()
+        flash("Error loading timetable", "danger")
+        return redirect(url_for('student_home'))
+
+
 # ------------------ RUN SERVER ------------------
 if __name__ == '__main__':
     socketio.run(app, debug=True)
