@@ -1,0 +1,70 @@
+{% extends "teacher_dashboard.html" %}
+
+{% block content %}
+<section class="content-section">
+  <div class="breadcrumb">
+    <span>Home</span> &gt; <span>Student List</span>
+  </div>
+
+  <h2>My Students</h2>
+
+  {% if not tabs %}
+    <p>No enrolled students found for your courses.</p>
+  {% else %}
+    <!-- Dept tabs -->
+    <div class="dept-tabs">
+      {% set first = True %}
+      {% for code, info in tabs.items() %}
+        <button
+          class="dept-tab-btn {% if first %}active{% endif %}"
+          data-target="pane-{{ code }}"
+        >
+          {{ info.label }}
+        </button>
+        {% set first = False %}
+      {% endfor %}
+    </div>
+
+    <!-- Tab content -->
+    <div class="dept-tab-content">
+      {% set first = True %}
+      {% for code, info in tabs.items() %}
+        <div
+          id="pane-{{ code }}"
+          class="dept-tab-pane {% if first %}active{% endif %}"
+        >
+          {% if info.courses %}
+            {% for ccode, cinfo in info.courses.items() %}
+              <h3>{{ cinfo.code }} – {{ cinfo.name }}</h3>
+              {% if cinfo.students %}
+                <table class="styled-table">
+                  <thead>
+                    <tr>
+                      <th>Roll No</th>
+                      <th>Name</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for s in cinfo.students %}
+                    <tr>
+                      <td>{{ s.roll }}</td>
+                      <td>{{ s.name }}</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              {% else %}
+                <p>No students enrolled in this course.</p>
+              {% endif %}
+              <br>
+            {% endfor %}
+          {% else %}
+            <p>No courses in this department.</p>
+          {% endif %}
+        </div>
+        {% set first = False %}
+      {% endfor %}
+    </div>
+  {% endif %}
+</section>
+{% endblock %}

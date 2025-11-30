@@ -1,0 +1,62 @@
+{% extends "teacher_dashboard.html" %}
+
+{% block content %}
+<section class="content-section">
+  <div class="breadcrumb">
+    <span>Home</span> &gt; <span>Course List</span>
+  </div>
+
+  <h2>My Courses</h2>
+
+  <!-- Tabs -->
+  <div class="dept-tabs">
+    {% set first = True %}
+    {% for code, info in tabs.items() %}
+      <button
+        class="dept-tab-btn {% if first %}active{% endif %}"
+        data-target="pane-{{ code }}"
+      >
+        {{ info.label }}
+      </button>
+      {% set first = False %}
+    {% endfor %}
+  </div>
+
+  <!-- Tab content -->
+  <div class="dept-tab-content">
+    {% set first = True %}
+    {% for code, info in tabs.items() %}
+      <div
+        id="pane-{{ code }}"
+        class="dept-tab-pane {% if first %}active{% endif %}"
+      >
+        {% if info.courses %}
+          <table class="styled-table">
+            <thead>
+              <tr>
+                <th>Course Code</th>
+                <th>Course Name</th>
+                <th>Credit Hours</th>
+                <th>Prerequisite</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for c in info.courses %}
+              <tr>
+                <td>{{ c.Course_Code }}</td>
+                <td>{{ c.Course_Name }}</td>
+                <td>{{ c.Credit_Hr }}</td>
+                <td>{{ c.Prerequisite or '-' }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p>No courses in this tab.</p>
+        {% endif %}
+      </div>
+      {% set first = False %}
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

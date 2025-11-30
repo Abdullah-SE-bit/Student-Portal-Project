@@ -2392,6 +2392,145 @@ def admin_student_courses():
         q=search
     )
 
+@app.route("/teacher/courses")
+def teacher_courses_list():
+    if "user" not in session:
+        return redirect(url_for("teacherlogin"))
+
+    teacherid = session.get("user")  # same as used elsewhere for teacher
+    conn = sqlite3.connect("flake.db")
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+
+    # Get this teacher's department
+    cur.execute("""
+        SELECT Department
+        FROM teachers
+        WHERE Teacher_ID = ?
+        LIMIT 1
+    """, (teacherid,))
+    row = cur.fetchone()
+    dept = row["Department"] if row else None
+
+    # Get all courses this teacher teaches (from teacher_courses)
+    cur.execute("""
+        SELECT
+            tc.Course_Code,
+            c.Course_Name,
+            c.Credit_Hr,
+            c.Prerequisite
+        FROM teacher_courses tc
+        JOIN courses c ON tc.Course_Code = c.Course_Code
+        WHERE tc.Teacher_ID = ?
+        ORDER BY tc.Course_Code
+    """, (teacherid,))
+    courses = cur.fetchall()
+    conn.close()
+
+    # Build tabs: only one dept (teacher's own) plus OTHER if needed
+    tabs = {
+        "MAIN": {"label": f"{dept or 'My'} Department", "courses": []},
+        "OTHER": {"label": "Other", "courses": []},
+    }
+
+    for c in courses:
+        code = c["Course_Code"] or ""
+        # department prefix from course code, e.g. CS-0001 -> CS
+        prefix = code.split("-")[0] if "-" in code else code[:2]
+        if dept and prefix.upper() == dept.upper():
+            tabs["MAIN"]["courses"].append(c)
+        else:
+            tabs["OTHER"]["courses"].append(c)
+
+    return render_template(
+        "teacher_course_list.html",
+        user_name=session.get("username"),
+        tabs=tabs
+    )
+
+@app.route("/teacher/students")
+def teacher_students_list():
+    if "user" not in session:
+        return redirect(url_for("teacherlogin"))
+
+    teacherid = session.get("user")
+    conn = sqlite3.connect("flake.db")
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+
+    # Get all courses taught by this teacher
+    cur.execute("""
+        SELECT
+            tc.Course_Code,
+            c.Course_Name
+        FROM teacher_courses tc
+        JOIN courses c ON tc.Course_Code = c.Course_Code
+        WHERE tc.Teacher_ID = ?
+        ORDER BY tc.Course_Code
+    """, (teacherid,))
+    teacher_courses = cur.fetchall()
+    course_map = {c["Course_Code"]: c for c in teacher_courses}
+
+    if not teacher_courses:
+        conn.close()
+        return render_template(
+            "teacher_student_list.html",
+            user_name=session.get("username"),
+            tabs={}
+        )
+
+    # Fetch enrolled students for these courses
+    placeholders = ",".join("?" * len(course_map))
+    cur.execute(f"""
+        SELECT
+            e.Course_Code,
+            s.Roll_No,
+            s.Name
+        FROM enrollments e
+        JOIN students s ON e.Roll_No = s.Roll_No
+        WHERE e.Course_Code IN ({placeholders})
+        ORDER BY e.Course_Code, s.Roll_No
+    """, tuple(course_map.keys()))
+    rows = cur.fetchall()
+    conn.close()
+
+    # Build structure: dept tabs -> courses -> students
+    tabs = {}
+
+    for r in rows:
+        course_code = r["Course_Code"]
+        roll = r["Roll_No"]
+        name = r["Name"]
+
+        # department from course code prefix (CS, MT, SS, CL, etc.)
+        prefix = course_code.split("-")[0] if "-" in course_code else course_code[:2]
+        dept_code = prefix.upper()
+
+        if dept_code not in tabs:
+            tabs[dept_code] = {
+                "label": dept_code,
+                "courses": {}
+            }
+
+        dept_courses = tabs[dept_code]["courses"]
+        if course_code not in dept_courses:
+            course_info = course_map.get(course_code)
+            dept_courses[course_code] = {
+                "code": course_code,
+                "name": course_info["Course_Name"] if course_info else "",
+                "students": []
+            }
+
+        dept_courses[course_code]["students"].append({
+            "roll": roll,
+            "name": name
+        })
+
+    return render_template(
+        "teacher_student_list.html",
+        user_name=session.get("username"),
+        tabs=tabs
+    )
 
 
     
