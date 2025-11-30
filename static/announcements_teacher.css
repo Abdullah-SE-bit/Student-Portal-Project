@@ -1,0 +1,401 @@
+/* ==================== TEACHER ANNOUNCEMENTS ==================== */
+
+.announcements-page {
+  max-width: 1200px;
+  margin: 20px auto;
+  padding: 0 16px 40px;
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+
+/* Toolbar Section */
+.announcements-page .ann-toolbar {
+  margin-bottom: 24px;
+  background: #fff;
+  padding: 14px 16px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.announcements-page .ann-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.announcements-page .ann-filters label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: #333;
+}
+
+.announcements-page .ann-filters select,
+.announcements-page .ann-filters button {
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: 1px solid #d4d9e8;
+  background: #fff;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.announcements-page .ann-filters select {
+  min-width: 180px;
+  color: #333;
+}
+
+.announcements-page .ann-filters select:focus {
+  outline: none;
+  border-color: #124DB5;
+  box-shadow: 0 0 0 3px rgba(18, 77, 181, 0.1);
+}
+
+.announcements-page .btn-primary-small {
+  background: #124DB5;
+  color: #fff;
+  border-color: #124DB5;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.announcements-page .btn-primary-small:hover {
+  background: #0d3f91;
+  box-shadow: 0 2px 6px rgba(18, 77, 181, 0.3);
+}
+
+/* Layout Grid */
+.announcements-page .ann-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 360px) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+/* Form Panel */
+.announcements-page .ann-form-panel {
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  height: fit-content;
+  position: sticky;
+  top: 20px;
+}
+
+.announcements-page .ann-section-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: #124DB5;
+  border-bottom: 2px solid #124DB5;
+  padding-bottom: 10px;
+}
+
+/* Form Styles */
+.announcements-page .ann-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.announcements-page .ann-form label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: #333;
+}
+
+.announcements-page .ann-form input[type="text"],
+.announcements-page .ann-form textarea,
+.announcements-page .ann-form select,
+.announcements-page .ann-form input[type="file"] {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border-radius: 4px;
+  border: 1px solid #d4d9e8;
+  font-size: 0.9rem;
+  font-family: inherit;
+  transition: border-color 0.2s ease;
+}
+
+.announcements-page .ann-form input[type="text"]:focus,
+.announcements-page .ann-form textarea:focus,
+.announcements-page .ann-form select:focus,
+.announcements-page .ann-form input[type="file"]:focus {
+  outline: none;
+  border-color: #124DB5;
+  box-shadow: 0 0 0 3px rgba(18, 77, 181, 0.1);
+}
+
+.announcements-page .ann-form textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.announcements-page .ann-form .btn-primary-main {
+  margin-top: 8px;
+  padding: 12px 16px;
+  background: #124DB5;
+  color: #fff;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.announcements-page .ann-form .btn-primary-main:hover {
+  background: #0d3f91;
+  box-shadow: 0 4px 12px rgba(18, 77, 181, 0.3);
+}
+
+/* List Panel */
+.announcements-page .ann-list-panel {
+  border-left: none;
+  padding-left: 0;
+}
+
+/* Announcement Card */
+.announcements-page .ann-card {
+  border-radius: 8px;
+  border: 1px solid #d4d9e8;
+  padding: 18px 20px;
+  margin-bottom: 16px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.announcements-page .ann-card:hover {
+  box-shadow: 0 4px 16px rgba(18, 77, 181, 0.15);
+  transform: translateY(-2px);
+}
+
+.announcements-page .ann-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.announcements-page .ann-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0;
+  color: #1b2559;
+  flex: 1;
+}
+
+.announcements-page .ann-meta {
+  font-size: 0.8rem;
+  color: #8a8f9e;
+  background: #f5f7fc;
+  padding: 4px 10px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+/* Body Content */
+.announcements-page .ann-body {
+  font-size: 0.95rem;
+  margin: 12px 0;
+  white-space: pre-wrap;
+  line-height: 1.6;
+  color: #333;
+}
+
+/* Attachments */
+.announcements-page .ann-attachments {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.announcements-page .ann-attachment-link {
+  font-size: 0.85rem;
+  color: #124DB5;
+  text-decoration: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  background: #e8f0ff;
+  border: 1px solid #c8d9ff;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.announcements-page .ann-attachment-link:hover {
+  background: #124DB5;
+  color: #fff;
+  border-color: #124DB5;
+}
+
+/* Discussion Section */
+.announcements-page .ann-discussion {
+  margin-top: 12px;
+  font-size: 0.9rem;
+  border-top: 1px solid #e1e4f0;
+  padding-top: 12px;
+}
+
+.announcements-page .ann-discussion summary {
+  cursor: pointer;
+  color: #124DB5;
+  font-weight: 600;
+  padding: 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.announcements-page .ann-discussion summary:hover {
+  background: #e8f0ff;
+}
+
+.announcements-page .ann-discussion[open] summary {
+  background: #e8f0ff;
+}
+
+/* Comments Section */
+.announcements-page .ann-comments {
+  margin-top: 10px;
+  padding: 10px;
+  background: #f9fafc;
+  border-radius: 4px;
+  border-left: 3px solid #124DB5;
+}
+
+.announcements-page .ann-comment {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+}
+
+.announcements-page .ann-comment:not(:last-child) {
+  border-bottom: 1px solid #e1e4f0;
+}
+
+.announcements-page .ann-comment .who {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #124DB5;
+  min-width: 80px;
+}
+
+.announcements-page .ann-comment .text {
+  font-size: 0.85rem;
+  color: #333;
+  line-height: 1.5;
+}
+
+/* Comment Form */
+.announcements-page .ann-comment-form {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.announcements-page .ann-comment-form input[type="text"] {
+  flex: 1;
+  padding: 8px 10px;
+  border-radius: 4px;
+  border: 1px solid #d4d9e8;
+  font-size: 0.9rem;
+  transition: border-color 0.2s ease;
+}
+
+.announcements-page .ann-comment-form input[type="text"]:focus {
+  outline: none;
+  border-color: #124DB5;
+  box-shadow: 0 0 0 3px rgba(18, 77, 181, 0.1);
+}
+
+.announcements-page .ann-comment-form button {
+  padding: 8px 16px;
+  background: #124DB5;
+  color: #fff;
+  border-radius: 4px;
+  border: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.announcements-page .ann-comment-form button:hover {
+  background: #0d3f91;
+  box-shadow: 0 2px 6px rgba(18, 77, 181, 0.3);
+}
+
+/* Empty States */
+.announcements-page .ann-empty,
+.announcements-page .ann-no-comments {
+  font-size: 0.9rem;
+  color: #8a8f9e;
+  padding: 20px;
+  text-align: center;
+  background: #f9fafc;
+  border-radius: 6px;
+  border: 1px dashed #d4d9e8;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .announcements-page .ann-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .announcements-page .ann-form-panel {
+    position: static;
+  }
+}
+
+@media (max-width: 768px) {
+  .announcements-page {
+    padding: 0 12px 30px;
+  }
+
+  .announcements-page .ann-toolbar {
+    padding: 12px;
+  }
+
+  .announcements-page .ann-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .announcements-page .ann-filters select {
+    min-width: auto;
+  }
+
+  .announcements-page .ann-section-title {
+    font-size: 1.2rem;
+    margin-bottom: 14px;
+  }
+
+  .announcements-page .ann-card {
+    padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+
+  .announcements-page .ann-card-header {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .announcements-page .ann-meta {
+    width: 100%;
+    white-space: normal;
+  }
+}

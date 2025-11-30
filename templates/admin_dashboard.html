@@ -10,6 +10,7 @@
     />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <title>Admin Dashboard</title>
+    {% block extra_css %}{% endblock %}
   </head>
 
   <body>
@@ -37,7 +38,7 @@
       <a href="{{ url_for('admin_teacher_courses') }}"><i class="fa-solid fa-book"></i> Teacher Courses List</a>
       <a href="{{ url_for('admin_student_departments') }}"><i class="fa-solid fa-building-columns"></i> Student Dept. List</a>
       <a href="{{ url_for('admin_student_courses') }}"><i class="fa-solid fa-book-open-reader"></i> Student Courses List</a>
-      <a href="#"><i class="fa-solid fa-bullhorn"></i> Announcements</a>
+      <a href="{{ url_for('admin_announcements') }}"><i class="fa-solid fa-bullhorn"></i> Announcements</a>
       <a href="{{ url_for('admin_feedback_view') }}"><i class="fa-solid fa-list-check"></i>Feedback</a>
     </div>
 

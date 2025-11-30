@@ -1,0 +1,155 @@
+{% extends "student_dashboard.html" %}
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='announcements_student.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="announcements-page student-ann-page">
+  <h2 class="ann-section-title">Announcements</h2>
+
+  <section class="ann-list-panel full">
+    {% if announcements %}
+      {% for a in announcements %}
+      <article class="ann-card" data-ann-id="{{ a.id }}">
+        <header class="ann-card-header">
+          <h3 class="ann-title">{{ a.title }}</h3>
+          <span class="ann-meta">
+            {{ a.created_by_role|capitalize }} • {{ a.created_at }}
+            {% if a.type == 'assignment' and a.due_at %} • Due: {{ a.due_at }}{% endif %}
+          </span>
+        </header>
+
+        <p class="ann-body">{{ a.body }}</p>
+
+        {% if a.attachments %}
+        <div class="ann-attachments">
+          {% for f in a.attachments %}
+          <a href="{{ f.url }}" target="_blank" class="ann-attachment-link">{{ f.name }}</a>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if a.type == 'assignment' %}
+        <div class="ann-assignment-turnin">
+          <form class="ann-submit-form" enctype="multipart/form-data">
+            <label>Turn in (before deadline)
+              <input type="file" name="submission_file" required>
+            </label>
+            <button type="submit">Submit</button>
+            <span class="ann-submit-msg" data-role="msg"></span>
+          </form>
+        </div>
+        {% endif %}
+
+        <details class="ann-discussion" data-ann-id="{{ a.id }}">
+          <summary>Discussion</summary>
+          <div class="ann-comments" data-role="comments"></div>
+          <form class="ann-comment-form">
+            <input type="text" name="text" placeholder="Ask a question..." required>
+            <button type="submit">Send</button>
+          </form>
+        </details>
+      </article>
+      {% endfor %}
+    {% else %}
+      <p class="ann-empty">No announcements available yet.</p>
+    {% endif %}
+  </section>
+</div>
+
+<script>
+(() => {
+  const page = document.querySelector('.student-ann-page');
+  if (!page) return;
+
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, m => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'
+    }[m]));
+  }
+
+  function loadComments(card) {
+    const annId = card.dataset.annId;
+    const container = card.querySelector('.ann-comments');
+    fetch(`/announcements/${encodeURIComponent(annId)}/comments`)
+      .then(r => r.ok ? r.json() : [])
+      .then(list => {
+        container.innerHTML = '';
+        if (!list.length) {
+          container.innerHTML = '<p class="ann-no-comments">No comments yet.</p>';
+          return;
+        }
+        list.forEach(c => {
+          const div = document.createElement('div');
+          div.className = 'ann-comment';
+          div.innerHTML = `<span class="who">${escapeHtml(c.author_role)}:</span>
+                           <span class="text">${escapeHtml(c.text)}</span>`;
+          container.appendChild(div);
+        });
+      }).catch(console.error);
+  }
+
+  // Discussion toggle + add comment
+  page.querySelectorAll('.ann-discussion').forEach(det => {
+    det.addEventListener('toggle', () => {
+      if (det.open) {
+        const card = det.closest('.ann-card');
+        loadComments(card);
+      }
+    });
+    const form = det.querySelector('.ann-comment-form');
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const card = det.closest('.ann-card');
+      const annId = card.dataset.annId;
+      const input = form.querySelector('input[name="text"]');
+      const text = input.value.trim();
+      if (!text) return;
+      fetch(`/announcements/${encodeURIComponent(annId)}/comments`, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({text})
+      }).then(r => r.json()).then(res => {
+        if (res.status === 'ok') {
+          input.value = '';
+          loadComments(card);
+        }
+      }).catch(console.error);
+    });
+  });
+
+  // Assignment turn-in
+  page.querySelectorAll('.ann-submit-form').forEach(form => {
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const card = form.closest('.ann-card');
+      const annId = card.dataset.annId;
+      const fileInput = form.querySelector('input[name="submission_file"]');
+      const msgEl = form.querySelector('[data-role="msg"]');
+      if (!fileInput.files.length) return;
+
+      const fd = new FormData();
+      fd.append('submission_file', fileInput.files[0]);
+
+      fetch(`/announcements/${encodeURIComponent(annId)}/submit`, {
+        method: 'POST',
+        body: fd
+      }).then(r => r.json()).then(res => {
+        if (res.status === 'ok') {
+          msgEl.textContent = "Submitted.";
+          msgEl.className = "ann-submit-msg ok";
+          fileInput.value = "";
+        } else {
+          msgEl.textContent = res.message || "Submission not accepted.";
+          msgEl.className = "ann-submit-msg err";
+        }
+      }).catch(err => {
+        console.error(err);
+        msgEl.textContent = "Error submitting.";
+        msgEl.className = "ann-submit-msg err";
+      });
+    });
+  });
+})();
+</script>
+{% endblock %}
