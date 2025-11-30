@@ -3,7 +3,7 @@ import sqlite3
 from datetime import datetime
 import re
 from flask_socketio import SocketIO, emit, join_room
-
+from flask import request
 import pandas as pd
 import sqlite3
 import math
@@ -2170,7 +2170,7 @@ def admit_card():
         courses=courses
     )
 
-from flask import request
+
 
 
 @app.route("/admin/teacher-courses")
