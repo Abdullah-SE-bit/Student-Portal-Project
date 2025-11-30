@@ -1,0 +1,104 @@
+{% extends "student_dashboard.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='fee_slip.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="fee-container">
+  <div class="fee-slip">
+    <div class="slip-header">
+      <h1>FEE SLIP / VOUCHER</h1>
+      <p class="subtitle">Semester Fee Details</p>
+    </div>
+
+    <div class="voucher-info">
+      <div>
+        <span class="label">Voucher ID:&nbsp;</span>
+        <span class="value">{{ voucher_id }}</span>
+      </div>
+      <div>
+        <span class="label">Issue Date:&nbsp;</span>
+        <span class="value">{{ current_date }}</span>
+      </div>
+    </div>
+
+    <div class="section-title">Student Information</div>
+    <div class="student-info">
+      <div class="info-row">
+        <span class="label">Roll No</span>
+        <span class="value">{{ student['Roll_No'] }}</span>
+      </div>
+      <div class="info-row">
+        <span class="label">Name</span>
+        <span class="value">{{ student['Name'] }}</span>
+      </div>
+      <div class="info-row">
+        <span class="label">Email</span>
+        <span class="value">{{ student['Email'] or 'N/A' }}</span>
+      </div>
+      <div class="info-row">
+        <span class="label">Mobile</span>
+        <span class="value">{{ student['Mobile_No'] or 'N/A' }}</span>
+      </div>
+    </div>
+
+    <div class="section-title">Enrolled Courses</div>
+    {% if courses %}
+      <table class="courses-table">
+        <thead>
+          <tr>
+            <th style="width: 22%;">Course Code</th>
+            <th style="width: 48%;">Course Name</th>
+            <th style="width: 15%;">Credit Hrs</th>
+            <th style="width: 15%;">Fee (Rs.)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in courses %}
+          <tr>
+            <td class="code">{{ c['Course_Code'] }}</td>
+            <td>{{ c['Course_Name'] }}</td>
+            <td class="credits">{{ c['Credit_Hr'] }}</td>
+            <td class="fee">{{ "{:,}".format(c['Credit_Hr'] * fee_per_credit) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div class="empty-state">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        <div>No enrolled courses found for this semester.</div>
+      </div>
+    {% endif %}
+
+    <div class="section-title">Fee Summary</div>
+    <div class="fee-summary-box">
+      <div class="summary-item">
+        <span class="label">Total Credits Enrolled</span>
+        <span class="value">{{ total_credits }}</span>
+      </div>
+      <div class="summary-item">
+        <span class="label">Fee per Credit Hour</span>
+        <span class="value">Rs. {{ "{:,}".format(fee_per_credit) }}</span>
+      </div>
+      <div class="total-fee-row">
+        <div class="total-text">Total Semester Fee (Payable)</div>
+        <div class="total-amount">Rs. {{ "{:,}".format(total_fee) }}</div>
+      </div>
+    </div>
+
+    <div class="note-text">
+      This slip can be printed or saved as PDF using your browser's print dialog.
+    </div>
+
+    <div class="action-buttons">
+      <button class="btn-print" onclick="window.print()">
+        <i class="fa-solid fa-print"></i>
+        Print / Save as PDF
+      </button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+ 

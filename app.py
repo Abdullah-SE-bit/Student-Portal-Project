@@ -7,6 +7,9 @@ from flask import request
 import pandas as pd
 import sqlite3
 import math
+import random
+import string
+
 
 def get_db():
     """Create a database connection with row factory for dictionary-like access"""
@@ -2530,6 +2533,57 @@ def teacher_students_list():
         "teacher_student_list.html",
         user_name=session.get("username"),
         tabs=tabs
+    )
+
+def generate_voucher_id():
+    # Simple random voucher like FEE-2025-ABC123
+    year = datetime.now().strftime("%Y")
+    rand = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+    return f"FEE-{year}-{rand}"
+
+@app.route('/student/fee')
+def student_fee():
+    if 'user' not in session:
+        return redirect(url_for('studentlogin'))
+
+    rollno = session['user']
+
+    conn = sqlite3.connect('flake.db')
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+
+    # Student info
+    cur.execute("SELECT Roll_No, Name, Email, Mobile_No FROM students WHERE Roll_No = ?", (rollno,))
+    student = cur.fetchone()
+
+    # Enrolled courses with credit hours
+    cur.execute("""
+        SELECT c.Course_Code, c.Course_Name, c.Credit_Hr
+        FROM enrollments e
+        JOIN courses c ON e.Course_Code = c.Course_Code
+        WHERE e.Roll_No = ?
+        ORDER BY c.Course_Code
+    """, (rollno,))
+    courses = cur.fetchall()
+
+    conn.close()
+
+    total_credits = sum(row['Credit_Hr'] or 0 for row in courses)
+    fee_per_credit = 10000
+    total_fee = total_credits * fee_per_credit
+
+    voucher_id = generate_voucher_id()
+    current_date = datetime.now().strftime("%d-%m-%Y")
+
+    return render_template(
+        'fee_details.html',
+        student=student,
+        courses=courses,
+        total_credits=total_credits,
+        fee_per_credit=fee_per_credit,
+        total_fee=total_fee,
+        voucher_id=voucher_id,
+        current_date=current_date
     )
 
 
