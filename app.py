@@ -2170,6 +2170,229 @@ def admit_card():
         courses=courses
     )
 
+from flask import request
+
+
+@app.route("/admin/teacher-courses")
+def admin_teacher_courses():
+    if "user" not in session:
+        return redirect(url_for("adminlogin"))
+
+    q = request.args.get("q", "").strip().lower()
+
+    conn = sqlite3.connect("flake.db")
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT 
+            t.Teacher_ID,
+            t.Name AS Teacher_Name,
+            t.Department,
+            c.Course_Code,
+            c.Course_Name,
+            c.Credit_Hr
+        FROM teacher_courses tc
+        JOIN teachers t ON tc.Teacher_ID = t.Teacher_ID
+        JOIN courses c ON tc.Course_Code = c.Course_Code
+        ORDER BY t.Department, t.Teacher_ID, c.Course_Code
+    """)
+    rows = cur.fetchall()
+    conn.close()
+
+    # Build tabs by department
+    tabs = {
+        "SE": {"label": "Software Engineering", "items": []},
+        "AI": {"label": "Artificial Intelligence", "items": []},
+        "DS": {"label": "Data Science", "items": []},
+        "CY": {"label": "Cyber Security", "items": []},
+        "OTHER": {"label": "Other", "items": []},
+    }
+
+    for r in rows:
+        dept = (r["Department"] or "").upper()
+        if dept not in tabs:
+            dept = "OTHER"
+        tabs[dept]["items"].append(r)
+
+    # Apply search: only by teacher name or course code
+    if q:
+        for code, info in tabs.items():
+            filtered = []
+            for r in info["items"]:
+                name = (r["Teacher_Name"] or "").lower()
+                ccode = (r["Course_Code"] or "").lower()
+                if q in name or q in ccode:
+                    filtered.append(r)
+            tabs[code]["items"] = filtered
+
+    return render_template(
+        "admin_teacher_courses.html",
+        user=session.get("user"),
+        tabs=tabs,
+        q=q
+    )
+
+
+
+
+def get_degree_from_roll(roll_no):
+    # Very simple: find any 2-letter alpha token that matches known degrees
+    degreemap = {"SE": "Software Engineering", "AI": "Artificial Intelligence",
+                 "DS": "Data Science", "CY": "Cyber Security"}
+    try:
+        import re
+        tokens = re.split(r"[-_]", roll_no)
+        for tok in tokens:
+            alpha = "".join(ch for ch in tok if ch.isalpha()).upper()
+            if len(alpha) == 2 and alpha in degreemap:
+                return alpha, degreemap[alpha]
+    except:
+        pass
+    return None, None
+
+
+from flask import request
+
+@app.route("/admin/student-departments")
+def admin_student_departments():
+    if "user" not in session:
+        return redirect(url_for("adminlogin"))
+
+    q = request.args.get("q", "").strip().lower()
+
+    conn = sqlite3.connect("flake.db")
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+    cur.execute("SELECT Roll_No, Name FROM students ORDER BY Roll_No")
+    students = cur.fetchall()
+    conn.close()
+
+    # build tabs
+    tabs = {
+        "SE": {"label": "Software Engineering", "students": []},
+        "AI": {"label": "Artificial Intelligence", "students": []},
+        "DS": {"label": "Data Science", "students": []},
+        "CY": {"label": "Cyber Security", "students": []},
+        "OTHER": {"label": "Other", "students": []},
+    }
+
+    def get_degree_from_roll(roll_no):
+        parts = roll_no.split("-")
+        for p in parts:
+            code = "".join(ch for ch in p if ch.isalpha()).upper()
+            if code in ["SE", "AI", "DS", "CY"]:
+                return code
+        return "OTHER"
+
+    # group students
+    for s in students:
+        dept = get_degree_from_roll(s["Roll_No"])
+        if dept not in tabs:
+            dept = "OTHER"
+        tabs[dept]["students"].append(s)
+
+    # apply search ONLY by roll or name
+    if q:
+        for code, info in tabs.items():
+            filtered = []
+            for s in info["students"]:
+                if q in s["Roll_No"].lower() or q in (s["Name"] or "").lower():
+                    filtered.append(s)
+            tabs[code]["students"] = filtered
+
+    return render_template(
+        "admin_student_departments.html",
+        user=session.get("user"),
+        tabs=tabs,
+        q=q
+    )
+
+
+
+@app.route("/admin/student-courses")
+def admin_student_courses():
+    if "user" not in session:
+        return redirect(url_for("adminlogin"))
+
+    search = request.args.get("q", "").strip().lower()
+
+    conn = sqlite3.connect("flake.db")
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT 
+            s.Roll_No,
+            s.Name AS Student_Name,
+            c.Course_Code,
+            c.Course_Name
+        FROM students s
+        LEFT JOIN enrollments e ON s.Roll_No = e.Roll_No
+        LEFT JOIN courses c ON e.Course_Code = c.Course_Code
+        ORDER BY s.Roll_No, c.Course_Code
+    """)
+    rows = cur.fetchall()
+    conn.close()
+
+    # Group students first
+    students = {}
+    for r in rows:
+        rn = r["Roll_No"]
+        if rn not in students:
+            students[rn] = {
+                "name": r["Student_Name"],
+                "courses": []
+            }
+        if r["Course_Code"]:
+            students[rn]["courses"].append({
+                "code": r["Course_Code"],
+                "name": r["Course_Name"]
+            })
+
+    # Helper to get dept from roll
+    def get_degree_from_roll(roll_no):
+        parts = roll_no.split("-")
+        for p in parts:
+            code = "".join(ch for ch in p if ch.isalpha()).upper()
+            if code in ["SE", "AI", "DS", "CY"]:
+                return code
+        return "OTHER"
+
+    # Build tabs by department
+    tabs = {
+        "SE": {"label": "Software Engineering", "students": []},
+        "AI": {"label": "Artificial Intelligence", "students": []},
+        "DS": {"label": "Data Science", "students": []},
+        "CY": {"label": "Cyber Security", "students": []},
+        "OTHER": {"label": "Other", "students": []},
+    }
+
+    for roll, info in students.items():
+        dept = get_degree_from_roll(roll)
+        if dept not in tabs:
+            dept = "OTHER"
+        tabs[dept]["students"].append({
+            "roll": roll,
+            "name": info["name"],
+            "courses": info["courses"]
+        })
+
+    # Apply search only by roll or name
+    if search:
+        for code, info in tabs.items():
+            filtered_students = []
+            for s in info["students"]:
+                if (search in s["roll"].lower()) or (search in (s["name"] or "").lower()):
+                    filtered_students.append(s)
+            tabs[code]["students"] = filtered_students
+
+    return render_template(
+        "admin_student_courses.html",
+        user=session.get("user"),
+        tabs=tabs,
+        q=search
+    )
+
+
 
     
 # ------------------ RUN SERVER ------------------

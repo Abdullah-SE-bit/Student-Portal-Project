@@ -1,0 +1,72 @@
+{% extends "admin_dashboard.html" %}
+
+{% block content %}
+<section class="content-section">
+  <h2>Teacher Courses List</h2>
+
+  <form method="get" class="search-form">
+    <input type="text" name="q"
+           placeholder="Search by teacher name or course code..."
+           value="{{ q or '' }}">
+    <button type="submit">Search</button>
+    {% if q %}
+      <a href="{{ url_for('admin_teacher_courses') }}">Clear</a>
+    {% endif %}
+  </form>
+
+  <!-- Department tabs (same style as student page) -->
+  <div class="dept-tabs">
+    {% set first = True %}
+    {% for code, info in tabs.items() %}
+      <button
+        class="dept-tab-btn {% if first %}active{% endif %}"
+        data-target="pane-{{ code }}"
+      >
+        {{ info.label }} ({{ code }})
+      </button>
+      {% set first = False %}
+    {% endfor %}
+  </div>
+
+  <!-- Tab contents -->
+  <div class="dept-tab-content">
+    {% set first = True %}
+    {% for code, info in tabs.items() %}
+      <div
+        id="pane-{{ code }}"
+        class="dept-tab-pane {% if first %}active{% endif %}"
+      >
+        {% if info["items"] %}
+          <table class="styled-table">
+            <thead>
+              <tr>
+                <th>Teacher ID</th>
+                <th>Teacher Name</th>
+                <th>Department</th>
+                <th>Course Code</th>
+                <th>Course Name</th>
+                <th>Credit Hours</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in info["items"] %}
+              <tr>
+                <td>{{ r.Teacher_ID }}</td>
+                <td>{{ r.Teacher_Name }}</td>
+                <td>{{ r.Department }}</td>
+                <td>{{ r.Course_Code }}</td>
+                <td>{{ r.Course_Name }}</td>
+                <td>{{ r.Credit_Hr }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p>No teacher-course records found in this department.</p>
+        {% endif %}
+      </div>
+      {% set first = False %}
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,70 @@
+{% extends "admin_dashboard.html" %}
+
+{% block content %}
+<section class="content-section">
+  <h2>Student Courses List</h2>
+
+  <form method="get" class="search-form">
+    <input type="text" name="q" placeholder="Search by roll no or name..." value="{{ q or '' }}">
+    <button type="submit">Search</button>
+    {% if q %}
+      <a href="{{ url_for('admin_student_courses') }}">Clear</a>
+    {% endif %}
+  </form>
+
+  <!-- TAB BUTTONS -->
+  <div class="dept-tabs">
+    {% set first = True %}
+    {% for code, info in tabs.items() %}
+      <button
+        class="dept-tab-btn {% if first %}active{% endif %}"
+        data-target="pane-{{ code }}"
+      >
+        {{ info.label }} ({{ code }})
+      </button>
+      {% set first = False %}
+    {% endfor %}
+  </div>
+
+  <!-- TAB CONTENT -->
+  <div class="dept-tab-content">
+    {% set first = True %}
+    {% for code, info in tabs.items() %}
+      <div
+        id="pane-{{ code }}"
+        class="dept-tab-pane {% if first %}active{% endif %}"
+      >
+        {% if info.students %}
+          {% for s in info.students %}
+            <h3>{{ s.roll }} - {{ s.name }}</h3>
+            {% if s.courses %}
+              <table class="styled-table">
+                <thead>
+                  <tr>
+                    <th>Course Code</th>
+                    <th>Course Name</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for c in s.courses %}
+                  <tr>
+                    <td>{{ c.code }}</td>
+                    <td>{{ c.name }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            {% else %}
+              <p>No courses enrolled.</p>
+            {% endif %}
+            <br>
+          {% endfor %}
+        {% else %}
+          <p>No students found in this department.</p>
+        {% endif %}
+      </div>
+      {% set first = False %}
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

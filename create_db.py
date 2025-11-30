@@ -256,6 +256,8 @@ def init_db():
     conn.close()
     print("✅ Database created and data imported successfully!")
 
+    
+
 if __name__ == "__main__":
     init_db()
 

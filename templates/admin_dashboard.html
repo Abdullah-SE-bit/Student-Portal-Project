@@ -34,9 +34,9 @@
       <button class="inside-btn" id="insideMenuToggle">&#9776;</button>
 
       <a href="{{ url_for('inbox_A') }}"><i class="fa-solid fa-inbox"></i> Inbox</a>
-      <a href="#"><i class="fa-solid fa-book"></i> Teacher Courses List</a>
-      <a href="#"><i class="fa-solid fa-building-columns"></i> Student Dept. List</a>
-      <a href="#"><i class="fa-solid fa-book-open-reader"></i> Student Courses List</a>
+      <a href="{{ url_for('admin_teacher_courses') }}"><i class="fa-solid fa-book"></i> Teacher Courses List</a>
+      <a href="{{ url_for('admin_student_departments') }}"><i class="fa-solid fa-building-columns"></i> Student Dept. List</a>
+      <a href="{{ url_for('admin_student_courses') }}"><i class="fa-solid fa-book-open-reader"></i> Student Courses List</a>
       <a href="#"><i class="fa-solid fa-bullhorn"></i> Announcements</a>
       <a href="{{ url_for('admin_feedback_view') }}"><i class="fa-solid fa-list-check"></i>Feedback</a>
     </div>
@@ -94,5 +94,39 @@
         }
       });
     </script>
+
+    <script>
+  // Simple tab switcher for department tabs
+  document.addEventListener('DOMContentLoaded', function () {
+    const tabButtons = document.querySelectorAll('.dept-tab-btn');
+    const tabPanes = document.querySelectorAll('.dept-tab-pane');
+
+    function activateTab(targetId) {
+      tabButtons.forEach(btn => {
+        if (btn.getAttribute('data-target') === targetId) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+
+      tabPanes.forEach(pane => {
+        if (pane.id === targetId) {
+          pane.classList.add('active');
+        } else {
+          pane.classList.remove('active');
+        }
+      });
+    }
+
+    tabButtons.forEach(btn => {
+      btn.addEventListener('click', function () {
+        const targetId = this.getAttribute('data-target');
+        activateTab(targetId);
+      });
+    });
+  });
+</script>
+
   </body>
 </html>
