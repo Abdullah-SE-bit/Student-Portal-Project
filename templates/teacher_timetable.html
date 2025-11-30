@@ -1,257 +1,244 @@
 {% extends "teacher_dashboard.html" %}
 
-{% block title %}Teacher Home{% endblock %}
+{% block title %}Teacher Timetable{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='teacher_timetable.css') }}">
+{% endblock %}
 
 {% block content %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='teacher_timetable.css') }}">
-</head>
-<body>
-    <div class="container">
-        <!-- Hero Section -->
-        <div class="hero-section">
-            <div class="hero-content">
-                <div class="hero-icon">📅</div>
-                <div class="hero-text">
-                    <h1>My Teaching Schedule</h1>
-                    <p>Manage your weekly classes and track your teaching hours</p>
-                    <div class="teacher-badge">
-                        <span class="badge-icon">👨‍🏫</span>
-                        <span>{{ teacher.Name }} • {{ teacher.Department }} • {{ teacher.Course_Code }}</span>
-                    </div>
-                </div>
-            </div>
+<div class="timetable-wrapper">
+  <!-- Hero Section -->
+  <div class="hero-section">
+    <div class="hero-content">
+      <div class="hero-icon">📅</div>
+      <div class="hero-text">
+        <h1>My Teaching Schedule</h1>
+        <p>Manage your weekly classes and track your teaching hours</p>
+        <div class="teacher-badge">
+          <span class="badge-icon">👨‍🏫</span>
+          <span>{{ teacher.Name }} • {{ teacher.Department }} • {{ teacher.Course_Code }}</span>
         </div>
-
-        <!-- Statistics -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-content">
-                    <div class="stat-icon-box">📚</div>
-                    <div class="stat-info">
-                        <h3>Total Classes</h3>
-                        <div class="stat-value">{{ statistics.total_classes }}</div>
-                    </div>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-content">
-                    <div class="stat-icon-box">⏱️</div>
-                    <div class="stat-info">
-                        <h3>Hours / Week</h3>
-                        <div class="stat-value">{{ statistics.total_hours }}</div>
-                    </div>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-content">
-                    <div class="stat-icon-box">👥</div>
-                    <div class="stat-info">
-                        <h3>Total Students</h3>
-                        <div class="stat-value">{{ statistics.total_students }}</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Week Navigation -->
-        <div class="week-nav-container">
-            <div class="week-nav">
-                <button class="nav-btn" onclick="changeWeek(-1)">
-                    <span>←</span>
-                    <span>Previous Week</span>
-                </button>
-                <div class="week-display" id="weekDisplay">Current Week</div>
-                <button class="nav-btn" onclick="changeWeek(1)">
-                    <span>Next Week</span>
-                    <span>→</span>
-                </button>
-            </div>
-        </div>
-
-        <!-- Timetable Grid -->
-        <div class="timetable-grid">
-            {% for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] %}
-            <div class="day-card">
-                <div class="day-header {{ day.lower() }}">
-                    <div class="day-header-content">
-                        <div class="day-name">
-                            <span class="day-emoji">
-                                {% if day == 'Monday' %}☀️{% elif day == 'Tuesday' %}🔥{% elif day == 'Wednesday' %}⚡{% elif day == 'Thursday' %}🌿{% elif day == 'Friday' %}🎉{% else %}🌙{% endif %}
-                            </span>
-                            <span>{{ day }}</span>
-                        </div>
-                        <div class="day-date" id="date-{{ day }}"></div>
-                    </div>
-                </div>
-                <div class="classes-container">
-                    {% if schedule.get(day) %}
-                        {% for class in schedule[day] %}
-                        <div class="class-card">
-                            <div class="class-header">
-                                <div class="class-time-badge">
-                                    <div class="time-start">{{ class.start_time }}</div>
-                                    <div class="time-separator">to</div>
-                                    <div class="time-end">{{ class.end_time }}</div>
-                                </div>
-                                <div class="class-info">
-                                    <div class="course-code">{{ class.course_code }}</div>
-                                    <div class="course-name">{{ class.course_name }}</div>
-                                    <div class="class-meta">
-                                        <span class="meta-badge room">📍 {{ class.room }}</span>
-                                        <span class="meta-badge section">👥 {{ class.section }}</span>
-                                        <span class="meta-badge type">
-                                            {% if class.type == 'Lab' %}💻{% elif class.type == 'Tutorial' %}📖{% else %}📝{% endif %} {{ class.type }}
-                                        </span>
-                                    </div>
-                                    <div class="students-badge">
-                                        <span>👨‍🎓</span>
-                                        <span>{{ class.students }} students enrolled</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    {% else %}
-                        <div class="no-class">
-                            <div class="no-class-icon">🌴</div>
-                            <div>No classes scheduled today</div>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-
-        <!-- Action Buttons -->
-        <div class="actions-container">
-            <div class="action-buttons">
-                <button class="action-btn" onclick="window.print()">
-                    <span class="btn-icon">🖨️</span>
-                    <span>Print Schedule</span>
-                </button>
-                <button class="action-btn" onclick="exportToCSV()">
-                    <span class="btn-icon">📥</span>
-                    <span>Export CSV</span>
-                </button>
-                <button class="action-btn" onclick="goToHome()">
-                    <span class="btn-icon">🏠</span>
-                    <span>Back to Home</span>
-                </button>
-            </div>
-        </div>
+      </div>
     </div>
+  </div>
 
-    <script>
-        // Initialize dates on page load
-        function updateDates() {
-            const today = new Date();
-            const currentDay = today.getDay();
-            const diff = currentDay === 0 ? -6 : 1 - currentDay;
-            
-            const monday = new Date(today);
-            monday.setDate(today.getDate() + diff);
-            
-            const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-                               'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-            
-            days.forEach((day, index) => {
-                const date = new Date(monday);
-                date.setDate(monday.getDate() + index);
-                const dateStr = `${monthNames[date.getMonth()]} ${date.getDate()}`;
-                
-                const element = document.getElementById(`date-${day}`);
-                if (element) {
-                    element.textContent = dateStr;
-                }
-            });
-            
-            const saturday = new Date(monday);
-            saturday.setDate(monday.getDate() + 5);
-            
-            const mondayStr = `${monthNames[monday.getMonth()]} ${monday.getDate()}`;
-            const saturdayStr = `${monthNames[saturday.getMonth()]} ${saturday.getDate()}`;
-            
-            document.getElementById('weekDisplay').textContent = 
-                `${mondayStr} - ${saturdayStr}, 2025`;
-        }
+  <!-- Statistics -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-content">
+        <div class="stat-icon-box">📚</div>
+        <div class="stat-info">
+          <h3>Total Classes</h3>
+          <div class="stat-value">{{ statistics.total_classes }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-content">
+        <div class="stat-icon-box">⏱️</div>
+        <div class="stat-info">
+          <h3>Hours / Week</h3>
+          <div class="stat-value">{{ statistics.total_hours }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-content">
+        <div class="stat-icon-box">👥</div>
+        <div class="stat-info">
+          <h3>Total Students</h3>
+          <div class="stat-value">{{ statistics.total_students }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-        // Week navigation
-        let weekOffset = 0;
+  <!-- Week Navigation -->
+  <div class="week-nav-container">
+    <div class="week-nav">
+      <button class="nav-btn" onclick="changeWeek(-1)">
+        <span>←</span>
+        <span>Previous Week</span>
+      </button>
+      <div class="week-display" id="weekDisplay">Current Week</div>
+      <button class="nav-btn" onclick="changeWeek(1)">
+        <span>Next Week</span>
+        <span>→</span>
+      </button>
+    </div>
+  </div>
 
-        function changeWeek(direction) {
-            weekOffset += direction;
-            
-            const today = new Date();
-            const currentDay = today.getDay();
-            const diff = currentDay === 0 ? -6 : 1 - currentDay;
-            
-            const monday = new Date(today);
-            monday.setDate(today.getDate() + diff + (weekOffset * 7));
-            
-            const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-                               'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-            
-            days.forEach((day, index) => {
-                const date = new Date(monday);
-                date.setDate(monday.getDate() + index);
-                const dateStr = `${monthNames[date.getMonth()]} ${date.getDate()}`;
-                
-                const element = document.getElementById(`date-${day}`);
-                if (element) {
-                    element.textContent = dateStr;
-                }
-            });
-            
-            const saturday = new Date(monday);
-            saturday.setDate(monday.getDate() + 5);
-            
-            const mondayStr = `${monthNames[monday.getMonth()]} ${monday.getDate()}`;
-            const saturdayStr = `${monthNames[saturday.getMonth()]} ${saturday.getDate()}`;
-            
-            document.getElementById('weekDisplay').textContent = 
-                `${mondayStr} - ${saturdayStr}, 2025`;
-        }
+  <!-- Timetable Grid -->
+  <div class="timetable-grid">
+    {% for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] %}
+    <div class="day-card">
+      <div class="day-header {{ day.lower() }}">
+        <div class="day-header-content">
+          <div class="day-name">
+            <span class="day-emoji">
+              {% if day == 'Monday' %}☀️{% elif day == 'Tuesday' %}🔥{% elif day == 'Wednesday' %}⚡{% elif day == 'Thursday' %}🌿{% elif day == 'Friday' %}🎉{% else %}🌙{% endif %}
+            </span>
+            <span>{{ day }}</span>
+          </div>
+          <div class="day-date" id="date-{{ day }}"></div>
+        </div>
+      </div>
+      <div class="classes-container">
+        {% if schedule.get(day) %}
+          {% for class in schedule[day] %}
+          <div class="class-card">
+            <div class="class-header">
+              <div class="class-time-badge">
+                <div class="time-start">{{ class.start_time }}</div>
+                <div class="time-separator">to</div>
+                <div class="time-end">{{ class.end_time }}</div>
+              </div>
+              <div class="class-info">
+                <div class="course-code">{{ class.course_code }}</div>
+                <div class="course-name">{{ class.course_name }}</div>
+                <div class="class-meta">
+                  <span class="meta-badge room">📍 {{ class.room }}</span>
+                  <span class="meta-badge section">👥 {{ class.section }}</span>
+                  <span class="meta-badge type">
+                    {% if class.type == 'Lab' %}💻{% elif class.type == 'Tutorial' %}📖{% else %}📝{% endif %} {{ class.type }}
+                  </span>
+                </div>
+                <div class="students-badge">
+                  <span>👨‍🎓</span>
+                  <span>{{ class.students }} students enrolled</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="no-class">
+            <div class="no-class-icon">🌴</div>
+            <div>No classes scheduled today</div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
 
-        // ✅ Export to CSV (fixed JSON parsing)
-        function exportToCSV() {
-            const schedule = JSON.parse(`{{ schedule | tojson | safe }}`);
-            let csv = 'Day,Date,Start Time,End Time,Course Code,Course Name,Room,Section,Type,Students\n';
-            
-            const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-            
-            days.forEach(day => {
-                if (schedule[day]) {
-                    const dateElement = document.getElementById(`date-${day}`);
-                    const date = dateElement ? dateElement.textContent : '';
-                    
-                    schedule[day].forEach(cls => {
-                        csv += `${day},"${date}",${cls.start_time},${cls.end_time},`;
-                        csv += `${cls.course_code},"${cls.course_name}",${cls.room},`;
-                        csv += `"${cls.section}",${cls.type},${cls.students}\n`;
-                    });
-                }
-            });
+  <!-- Action Buttons -->
+  <div class="actions-container">
+    <div class="action-buttons">
+      <button class="action-btn" onclick="window.print()">
+        <span class="btn-icon">🖨️</span>
+        <span>Print Schedule</span>
+      </button>
+      <button class="action-btn" onclick="exportToCSV()">
+        <span class="btn-icon">📥</span>
+        <span>Export CSV</span>
+      </button>
+      <button class="action-btn" onclick="goToHome()">
+        <span class="btn-icon">🏠</span>
+        <span>Back to Home</span>
+      </button>
+    </div>
+  </div>
+</div>
 
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `timetable_{{ teacher.Teacher_ID }}_${Date.now()}.csv`;
-            a.click();
-            window.URL.revokeObjectURL(url);
-        }
+<script>
+  function updateDates() {
+    const today = new Date();
+    const currentDay = today.getDay();
+    const diff = currentDay === 0 ? -6 : 1 - currentDay;
+    const monday = new Date(today);
+    monday.setDate(today.getDate() + diff);
 
-        // Go to home
-        function goToHome() {
-            window.location.href = "{{ url_for('teacher_home') }}";
-        }
+    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', updateDates);
-    </script>
-</body>
-</html>
-    
+    days.forEach((day, index) => {
+      const date = new Date(monday);
+      date.setDate(monday.getDate() + index);
+      const dateStr = `${monthNames[date.getMonth()]} ${date.getDate()}`;
+      const element = document.getElementById(`date-${day}`);
+      if (element) {
+        element.textContent = dateStr;
+      }
+    });
+
+    const saturday = new Date(monday);
+    saturday.setDate(monday.getDate() + 5);
+
+    const mondayStr = `${monthNames[monday.getMonth()]} ${monday.getDate()}`;
+    const saturdayStr = `${monthNames[saturday.getMonth()]} ${saturday.getDate()}`;
+
+    document.getElementById('weekDisplay').textContent =
+      `${mondayStr} - ${saturdayStr}, 2025`;
+  }
+
+  let weekOffset = 0;
+
+  function changeWeek(direction) {
+    weekOffset += direction;
+    const today = new Date();
+    const currentDay = today.getDay();
+    const diff = currentDay === 0 ? -6 : 1 - currentDay;
+    const monday = new Date(today);
+    monday.setDate(today.getDate() + diff + (weekOffset * 7));
+
+    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    days.forEach((day, index) => {
+      const date = new Date(monday);
+      date.setDate(monday.getDate() + index);
+      const dateStr = `${monthNames[date.getMonth()]} ${date.getDate()}`;
+      const element = document.getElementById(`date-${day}`);
+      if (element) {
+        element.textContent = dateStr;
+      }
+    });
+
+    const saturday = new Date(monday);
+    saturday.setDate(monday.getDate() + 5);
+
+    const mondayStr = `${monthNames[monday.getMonth()]} ${monday.getDate()}`;
+    const saturdayStr = `${monthNames[saturday.getMonth()]} ${saturday.getDate()}`;
+
+    document.getElementById('weekDisplay').textContent =
+      `${mondayStr} - ${saturdayStr}, 2025`;
+  }
+
+  function exportToCSV() {
+    const schedule = JSON.parse(`{{ schedule | tojson | safe }}`);
+    let csv = 'Day,Date,Start Time,End Time,Course Code,Course Name,Room,Section,Type,Students\n';
+
+    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+    days.forEach(day => {
+      if (schedule[day]) {
+        const dateElement = document.getElementById(`date-${day}`);
+        const date = dateElement ? dateElement.textContent : '';
+        schedule[day].forEach(cls => {
+          csv += `${day},"${date}",${cls.start_time},${cls.end_time},`;
+          csv += `${cls.course_code},"${cls.course_name}",${cls.room},`;
+          csv += `"${cls.section}",${cls.type},${cls.students}\n`;
+        });
+      }
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `timetable_{{ teacher.Teacher_ID }}_${Date.now()}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  }
+
+  function goToHome() {
+    window.location.href = "{{ url_for('teacher_home') }}";
+  }
+
+  document.addEventListener('DOMContentLoaded', updateDates);
+</script>
 {% endblock %}

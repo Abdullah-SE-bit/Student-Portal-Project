@@ -1,4 +1,5 @@
-/* Feedback System Styles - Matching Flake Design Theme */
+/* Feedback System Styles - Blue/White/Black Theme */
+
 
 /* Breadcrumb */
 .breadcrumb {
@@ -13,12 +14,13 @@
 }
 
 .breadcrumb a:hover {
-    color: #6C7BCC;
+    color: #124DB5;
 }
+
 
 /* Page Header */
 .page-header {
-    background: #6C7BCC;
+    background: #124DB5;
     color: white;
     padding: 25px 30px;
     border-radius: 8px;
@@ -36,6 +38,7 @@
     opacity: 0.95;
 }
 
+
 /* Alerts */
 .alert {
     padding: 15px;
@@ -43,36 +46,39 @@
     border-radius: 5px;
 }
 
+/* Use blue/gray variants instead of green/yellow/red */
 .alert-success {
-    background: #d4edda;
-    color: #155724;
-    border: 1px solid #c3e6cb;
+    background: #E3F2FD;
+    color: #0D47A1;
+    border: 1px solid #BBDEFB;
 }
 
 .alert-warning {
-    background: #fff3cd;
-    color: #856404;
-    border: 1px solid #ffeeba;
+    background: #F5F5F5;
+    color: #333333;
+    border: 1px solid #E0E0E0;
 }
 
 .alert-error {
-    background: #f8d7da;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
+    background: #ECEFF1;
+    color: #263238;
+    border: 1px solid #CFD8DC;
 }
+
 
 /* Anonymous Note */
 .anonymous-note {
-    background: #FFF3CD;
+    background: #E3F2FD;
     padding: 15px 20px;
     border-radius: 8px;
     margin-bottom: 25px;
-    border-left: 4px solid #FFC107;
+    border-left: 4px solid #124DB5;
 }
 
 .anonymous-note strong {
-    color: #856404;
+    color: #124DB5;
 }
+
 
 /* Table Styles */
 .table-container {
@@ -88,14 +94,14 @@
 }
 
 .table-container thead tr {
-    background: #D5D8E8;
+    background: #E3E7F5;
 }
 
 .table-container th {
     padding: 15px;
     text-align: left;
     font-weight: 600;
-    color: #333;
+    color: #111;
 }
 
 .table-container td {
@@ -104,16 +110,17 @@
 }
 
 .table-container tbody tr {
-    border-bottom: 1px solid #E8E9F0;
+    border-bottom: 1px solid #E0E2EC;
 }
 
 .table-container tbody tr:hover {
-    background: #F8F9FC;
+    background: #F5F6FC;
 }
+
 
 /* Status Text */
 .status-submitted {
-    color: #5CB85C;
+    color: #124DB5;
     font-weight: 500;
 }
 
@@ -121,10 +128,11 @@
     color: #999;
 }
 
+
 /* Buttons */
 .btn-primary {
     display: inline-block;
-    background: #6C7BCC;
+    background: #124DB5;
     color: white;
     padding: 8px 20px;
     border-radius: 5px;
@@ -137,7 +145,7 @@
 }
 
 .btn-primary:hover {
-    background: #5A68B5;
+    background: #0D3C8F;
 }
 
 .btn-large {
@@ -148,7 +156,7 @@
 
 .btn-secondary {
     display: inline-block;
-    background: #6C757D;
+    background: #455A64;
     color: white;
     padding: 12px 40px;
     border-radius: 8px;
@@ -159,8 +167,9 @@
 }
 
 .btn-secondary:hover {
-    background: #5a6268;
+    background: #37474F;
 }
+
 
 /* Statistics Cards */
 .stats-grid {
@@ -171,7 +180,7 @@
 }
 
 .stat-card {
-    background: linear-gradient(135deg, #6C7BCC 0%, #5A68B5 100%);
+    background: linear-gradient(135deg, #124DB5 0%, #0D3C8F 100%);
     color: white;
     padding: 25px;
     border-radius: 10px;
@@ -190,9 +199,10 @@
     margin-bottom: 5px;
 }
 
+
 /* Filter Section */
 .filter-section {
-    background: #F8F9FC;
+    background: #F5F6FC;
     padding: 20px;
     border-radius: 8px;
     margin-bottom: 25px;
@@ -209,7 +219,7 @@
 
 .filter-section select:focus {
     outline: none;
-    border-color: #6C7BCC;
+    border-color: #124DB5;
 }
 
 .filter-grid {
@@ -224,9 +234,10 @@
     align-items: center;
 }
 
+
 /* Course Info Box */
 .course-info-box {
-    background: #F8F9FC;
+    background: #F5F6FC;
     padding: 20px;
     border-radius: 8px;
     margin-bottom: 30px;
@@ -250,16 +261,17 @@
     font-weight: 600;
 }
 
+
 /* Rating Section */
 .rating-section {
-    background: #F8F9FC;
+    background: #F5F6FC;
     padding: 25px;
     border-radius: 8px;
     margin-bottom: 25px;
 }
 
 .rating-section h3 {
-    color: #6C7BCC;
+    color: #124DB5;
     margin-bottom: 20px;
     font-size: 1.2em;
 }
@@ -287,32 +299,34 @@
 
 .star {
     font-size: 32px;
-    color: #DDD;
+    color: #CCCCCC;
     cursor: pointer;
     transition: color 0.2s;
     user-select: none;
 }
 
+/* Active stars in blue */
 .star:hover,
 .star.active {
-    color: #FFC107;
+    color: #124DB5;
 }
 
 .stars-display {
-    color: #FFC107;
+    color: #124DB5;
     font-size: 1.2em;
 }
 
+
 /* MCQ Section */
 .mcq-section {
-    background: #F8F9FC;
+    background: #F5F6FC;
     padding: 25px;
     border-radius: 8px;
     margin-bottom: 25px;
 }
 
 .mcq-section h3 {
-    color: #6C7BCC;
+    color: #124DB5;
     margin-bottom: 20px;
     font-size: 1.2em;
 }
@@ -356,14 +370,15 @@
 }
 
 .mcq-option input[type="radio"]:checked + label {
-    background: #6C7BCC;
+    background: #124DB5;
     color: white;
-    border-color: #6C7BCC;
+    border-color: #124DB5;
 }
 
 .mcq-option label:hover {
-    border-color: #6C7BCC;
+    border-color: #124DB5;
 }
+
 
 /* Textarea */
 textarea {
@@ -379,13 +394,14 @@ textarea {
 
 textarea:focus {
     outline: none;
-    border-color: #6C7BCC;
+    border-color: #124DB5;
 }
+
 
 /* Feedback Card */
 .feedback-card {
     background: white;
-    border-left: 5px solid #6C7BCC;
+    border-left: 5px solid #124DB5;
     padding: 25px;
     border-radius: 10px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -404,7 +420,7 @@ textarea:focus {
     align-items: center;
     margin-bottom: 20px;
     padding-bottom: 15px;
-    border-bottom: 2px solid #E8E9F0;
+    border-bottom: 2px solid #E0E2EC;
 }
 
 .feedback-course-name {
@@ -429,7 +445,7 @@ textarea:focus {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: #F8F9FC;
+    background: #F5F6FC;
     padding: 12px 15px;
     border-radius: 8px;
 }
@@ -439,18 +455,19 @@ textarea:focus {
     font-size: 0.9em;
 }
 
+
 /* MCQ Results in Feedback Card */
 .mcq-results {
     margin: 15px 0;
     padding: 15px;
     background: white;
     border-radius: 8px;
-    border: 1px solid #E8E9F0;
+    border: 1px solid #E0E2EC;
 }
 
 .mcq-results-title {
     font-weight: 600;
-    color: #6C7BCC;
+    color: #124DB5;
     margin-bottom: 10px;
 }
 
@@ -464,7 +481,7 @@ textarea:focus {
     display: flex;
     justify-content: space-between;
     padding: 10px;
-    background: #F8F9FC;
+    background: #F5F6FC;
     border-radius: 5px;
 }
 
@@ -472,25 +489,27 @@ textarea:focus {
     font-weight: 600;
 }
 
+/* Use only blues/gray for value colors */
 .mcq-value.excellent {
-    color: #28a745;
+    color: #0D47A1;
 }
 
 .mcq-value.good {
-    color: #17a2b8;
+    color: #1565C0;
 }
 
 .mcq-value.fair {
-    color: #ffc107;
+    color: #546E7A;
 }
 
 .mcq-value.poor {
-    color: #dc3545;
+    color: #263238;
 }
+
 
 /* Suggestions Box */
 .suggestions-box {
-    background: #F8F9FC;
+    background: #F5F6FC;
     padding: 15px;
     border-radius: 8px;
     margin-top: 15px;
@@ -498,7 +517,7 @@ textarea:focus {
 
 .suggestions-title {
     font-weight: 600;
-    color: #6C7BCC;
+    color: #124DB5;
     margin-bottom: 8px;
 }
 
@@ -507,6 +526,7 @@ textarea:focus {
     line-height: 1.6;
     font-style: italic;
 }
+
 
 /* No Feedback Message */
 .no-feedback {
@@ -520,6 +540,7 @@ textarea:focus {
     margin-bottom: 20px;
 }
 
+
 /* Teacher Info (Admin View) */
 .teacher-info {
     font-size: 1.1em;
@@ -528,17 +549,18 @@ textarea:focus {
 }
 
 .teacher-name {
-    color: #6C7BCC;
+    color: #124DB5;
 }
 
 .course-badge {
-    background: #6C7BCC;
+    background: #124DB5;
     color: white;
     padding: 5px 15px;
     border-radius: 20px;
     font-size: 0.9em;
     text-align: center;
 }
+
 
 /* Teacher-Course Reference */
 .teacher-course-reference {
@@ -550,23 +572,25 @@ textarea:focus {
 }
 
 .teacher-course-reference strong {
-    color: #6C7BCC;
+    color: #124DB5;
 }
 
 .course-tag {
     display: inline-block;
-    background: #f0f0f0;
+    background: #F0F0F0;
     padding: 5px 10px;
     margin: 3px;
     border-radius: 5px;
     font-size: 0.9em;
 }
 
+
 /* Button Container */
 .button-container {
     display: flex;
     gap: 15px;
 }
+
 
 /* Responsive Design */
 @media (max-width: 768px) {

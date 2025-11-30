@@ -1,7 +1,3 @@
-"""
-Populate timetable data for all teachers
-Run this after creating the database
-"""
 
 import sqlite3
 import random
