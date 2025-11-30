@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Change Password</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='portal_template.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='change_p.css') }}">
+</head>
+<body>
+  <main class="change-wrap">
+    <h2>Change Password</h2>
+
+    <div id="step1" class="step">
+      <p>Enter your current password</p>
+      <input id="old_password" type="password" placeholder="Current password" autocomplete="current-password">
+      <button id="verify_btn" class="btn-primary-main">Verify</button>
+      <p id="step1_msg" class="msg"></p>
+    </div>
+
+    <div id="step2" class="step hidden">
+      <p>Enter new password</p>
+      <input id="new_password" type="password" placeholder="New password" autocomplete="new-password">
+      <input id="new_password2" type="password" placeholder="Confirm new password" autocomplete="new-password">
+      <button id="change_btn" class="btn-primary-main">Change Password</button>
+      <p id="step2_msg" class="msg"></p>
+    </div>
+
+    <p class="note"><a href="{{ url_for('home') }}">Cancel</a></p>
+  </main>
+
+  <script>
+  // Inline JS: two-step change-password flow using AJAX
+  (function(){
+    const verifyBtn = document.getElementById('verify_btn');
+    const changeBtn = document.getElementById('change_btn');
+    const step1 = document.getElementById('step1');
+    const step2 = document.getElementById('step2');
+    const msg1 = document.getElementById('step1_msg');
+    const msg2 = document.getElementById('step2_msg');
+
+    function showMessage(el, txt, ok){
+      el.textContent = txt || '';
+      el.style.color = ok ? '#1b7b41' : '#b02a37';
+    }
+
+    verifyBtn && verifyBtn.addEventListener('click', async () => {
+      msg1.textContent = '';
+      const old = document.getElementById('old_password').value || '';
+      if (!old.trim()) { showMessage(msg1, 'Please enter your current password'); return; }
+
+      try {
+        const res = await fetch('{{ url_for("change_password") }}', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({action: 'verify_old', old_password: old})
+        });
+        const j = await res.json();
+        if (j.status === 'ok') {
+          step1.classList.add('hidden');
+          step2.classList.remove('hidden');
+        } else {
+          showMessage(msg1, j.message || 'Incorrect password');
+        }
+      } catch (err) {
+        showMessage(msg1, 'Network error');
+      }
+    });
+
+    changeBtn && changeBtn.addEventListener('click', async () => {
+      msg2.textContent = '';
+      const n1 = document.getElementById('new_password').value || '';
+      const n2 = document.getElementById('new_password2').value || '';
+      if (n1.length < 4) { showMessage(msg2, 'Password must be at least 4 characters'); return; }
+      if (n1 !== n2) { showMessage(msg2, 'Passwords do not match'); return; }
+
+      try {
+        const res = await fetch('{{ url_for("change_password") }}', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({action: 'set_new', new_password: n1})
+        });
+        const j = await res.json();
+        if (j.status === 'ok') {
+          showMessage(msg2, 'Password changed successfully', true);
+          setTimeout(() => { window.location.href = '{{ url_for("home") }}'; }, 1200);
+        } else {
+          showMessage(msg2, j.message || 'Failed to change password');
+        }
+      } catch (err) {
+        showMessage(msg2, 'Network error');
+      }
+    });
+  })();
+  </script>
+</body>
+</html>
