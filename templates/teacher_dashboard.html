@@ -36,11 +36,10 @@
       <button class="inside-btn" id="insideMenuToggle">&#9776;</button>
 
       <a href="{{ url_for('teacher_home') }}"><i class="fa-solid fa-house"></i> Home</a>
-
       <a href="{{ url_for('teacher_inbox') }}"><i class="fa-solid fa-inbox"></i> Inbox</a>
       <a href="{{ url_for('teacher_courses_list') }}"><i class="fa-solid fa-book-open"></i> Course List</a>
       <a href="{{ url_for('teacher_students_list') }}"><i class="fa-solid fa-users"></i> Student List</a>
-      <a href="#"><i class="fa-solid fa-bullhorn"></i> Announcements</a>
+      <a href="{{ url_for('teacher_announcements') }}"><i class="fa-solid fa-bullhorn"></i> Announcements</a>
       <a href="{{ url_for('teacher_attendance') }}"><i class="fa-solid fa-clipboard-check"></i> Attendance</a>
       <a href="{{ url_for('teacher_marks') }}"><i class="fa-solid fa-list-check"></i> Marks</a>
       <a href="{{ url_for('teacher_feedback_view') }}"><i class="fa-solid fa-calendar-days"></i> View Feedback</a>

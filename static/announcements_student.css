@@ -1,0 +1,323 @@
+/* ==================== STUDENT ANNOUNCEMENTS ==================== */
+
+.announcements-page {
+  max-width: 900px;
+  margin: 20px auto;
+  padding: 0 16px 40px;
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+
+/* Page Title */
+.announcements-page .ann-section-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 25px;
+  color: #124DB5;
+  padding-bottom: 15px;
+  border-bottom: 3px solid #124DB5;
+}
+
+.announcements-page .full {
+  border-top: none;
+  padding-top: 10px;
+}
+
+/* Announcement Card */
+.announcements-page .ann-card {
+  border-radius: 8px;
+  border: 1px solid #d4d9e8;
+  padding: 18px 20px;
+  margin-bottom: 16px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.announcements-page .ann-card:hover {
+  box-shadow: 0 4px 16px rgba(18, 77, 181, 0.15);
+  transform: translateY(-2px);
+}
+
+.announcements-page .ann-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.announcements-page .ann-title {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 0;
+  color: #1b2559;
+  flex: 1;
+}
+
+.announcements-page .ann-meta {
+  font-size: 0.8rem;
+  color: #8a8f9e;
+  background: #f5f7fc;
+  padding: 4px 10px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+/* Announcement Body */
+.announcements-page .ann-body {
+  font-size: 0.95rem;
+  margin: 12px 0;
+  white-space: pre-wrap;
+  line-height: 1.6;
+  color: #333;
+}
+
+/* Attachments */
+.announcements-page .ann-attachments {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.announcements-page .ann-attachment-link {
+  font-size: 0.85rem;
+  color: #124DB5;
+  text-decoration: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  background: #e8f0ff;
+  border: 1px solid #c8d9ff;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.announcements-page .ann-attachment-link:hover {
+  background: #124DB5;
+  color: #fff;
+  border-color: #124DB5;
+}
+
+/* Assignment Turn In */
+.announcements-page .ann-assignment-turnin {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 2px dashed #d4d9e8;
+  background: #f9fafc;
+  padding: 12px;
+  border-radius: 6px;
+}
+
+.announcements-page .ann-submit-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  font-size: 0.9rem;
+}
+
+.announcements-page .ann-submit-form label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #333;
+}
+
+.announcements-page .ann-submit-form input[type="file"] {
+  font-size: 0.85rem;
+  padding: 4px;
+  border: 1px solid #d4d9e8;
+  border-radius: 4px;
+}
+
+.announcements-page .ann-submit-form button {
+  padding: 8px 16px;
+  background: #124DB5;
+  color: #fff;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.announcements-page .ann-submit-form button:hover {
+  background: #0d3f91;
+  box-shadow: 0 2px 6px rgba(18, 77, 181, 0.3);
+}
+
+.announcements-page .ann-submit-msg {
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.announcements-page .ann-submit-msg.ok {
+  color: #2e7d32;
+  background: #e8f5e9;
+  padding: 4px 8px;
+  border-radius: 3px;
+}
+
+.announcements-page .ann-submit-msg.err {
+  color: #c62828;
+  background: #ffebee;
+  padding: 4px 8px;
+  border-radius: 3px;
+}
+
+/* Discussion Section */
+.announcements-page .ann-discussion {
+  margin-top: 12px;
+  font-size: 0.9rem;
+  border-top: 1px solid #e1e4f0;
+  padding-top: 12px;
+}
+
+.announcements-page .ann-discussion summary {
+  cursor: pointer;
+  color: #124DB5;
+  font-weight: 600;
+  padding: 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.announcements-page .ann-discussion summary:hover {
+  background: #e8f0ff;
+}
+
+.announcements-page .ann-discussion[open] summary {
+  background: #e8f0ff;
+}
+
+/* Comments Section */
+.announcements-page .ann-comments {
+  margin-top: 10px;
+  padding: 10px;
+  background: #f9fafc;
+  border-radius: 4px;
+  border-left: 3px solid #124DB5;
+}
+
+.announcements-page .ann-comment {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+}
+
+.announcements-page .ann-comment:not(:last-child) {
+  border-bottom: 1px solid #e1e4f0;
+}
+
+.announcements-page .ann-comment .who {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #124DB5;
+  min-width: 80px;
+}
+
+.announcements-page .ann-comment .text {
+  font-size: 0.85rem;
+  color: #333;
+  line-height: 1.5;
+}
+
+/* Comment Form */
+.announcements-page .ann-comment-form {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.announcements-page .ann-comment-form input[type="text"] {
+  flex: 1;
+  padding: 8px 10px;
+  border-radius: 4px;
+  border: 1px solid #d4d9e8;
+  font-size: 0.9rem;
+  transition: border-color 0.2s ease;
+}
+
+.announcements-page .ann-comment-form input[type="text"]:focus {
+  outline: none;
+  border-color: #124DB5;
+  box-shadow: 0 0 0 3px rgba(18, 77, 181, 0.1);
+}
+
+.announcements-page .ann-comment-form button {
+  padding: 8px 16px;
+  background: #124DB5;
+  color: #fff;
+  border-radius: 4px;
+  border: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.announcements-page .ann-comment-form button:hover {
+  background: #0d3f91;
+  box-shadow: 0 2px 6px rgba(18, 77, 181, 0.3);
+}
+
+/* Empty States */
+.announcements-page .ann-empty,
+.announcements-page .ann-no-comments {
+  font-size: 0.9rem;
+  color: #8a8f9e;
+  padding: 20px;
+  text-align: center;
+  background: #f9fafc;
+  border-radius: 6px;
+  border: 1px dashed #d4d9e8;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .announcements-page {
+    padding: 0 12px 30px;
+  }
+
+  .announcements-page .ann-section-title {
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+  }
+
+  .announcements-page .ann-card {
+    padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+
+  .announcements-page .ann-card-header {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .announcements-page .ann-meta {
+    width: 100%;
+    white-space: normal;
+  }
+
+  .announcements-page .ann-submit-form {
+    flex-direction: column;
+  }
+
+  .announcements-page .ann-submit-form input[type="file"] {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .announcements-page .ann-comment-form {
+    flex-direction: column;
+  }
+
+  .announcements-page .ann-comment-form input[type="text"] {
+    width: 100%;
+  }
+}

@@ -1,0 +1,167 @@
+{% extends "teacher_dashboard.html" %}
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='announcements_teacher.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="announcements-page teacher-ann-page">
+  <div class="ann-toolbar">
+    <form class="ann-filters" method="get" action="{{ url_for('teacher_announcements') }}">
+      <label>Course
+        <select name="course">
+          {% for c in courses %}
+          <option value="{{ c.code }}" {{ 'selected' if selected_course==c.code }}>
+            {{ c.code }} – {{ c.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </label>
+      <button type="submit" class="btn-primary-small">Load</button>
+    </form>
+  </div>
+
+  <div class="ann-layout">
+    <section class="ann-form-panel">
+      <h2 class="ann-section-title">New announcement</h2>
+      <form method="post" action="{{ url_for('teacher_announcements_create') }}" enctype="multipart/form-data" class="ann-form">
+        <label>Course
+          <select name="course_code" required>
+            {% for c in courses %}
+            <option value="{{ c.code }}" {{ 'selected' if selected_course==c.code }}>
+              {{ c.code }} – {{ c.name }}
+            </option>
+            {% endfor %}
+          </select>
+        </label>
+
+        <label>Type
+          <select name="type">
+            <option value="text">General</option>
+            <option value="assignment">Assignment</option>
+          </select>
+        </label>
+
+        <label>Title
+          <input type="text" name="title" required>
+        </label>
+
+        <label>Message
+          <textarea name="body" rows="4" required></textarea>
+        </label>
+
+        <label class="due-wrap">
+          Due date (for assignments)
+          <input type="datetime-local" name="due_at">
+        </label>
+
+        <label>Attachments (any files or .zip)
+          <input type="file" name="files" multiple>
+        </label>
+
+        <button type="submit" class="btn-primary-main">Post</button>
+      </form>
+    </section>
+
+    <section class="ann-list-panel">
+      <h2 class="ann-section-title">Announcements for {{ selected_course }}</h2>
+
+      {% if announcements %}
+        {% for a in announcements %}
+        <article class="ann-card" data-ann-id="{{ a.id }}">
+          <header class="ann-card-header">
+            <h3 class="ann-title">{{ a.title }}</h3>
+            <span class="ann-meta">
+              {{ a.type|capitalize }} • {{ a.created_at }}
+              {% if a.due_at %} • Due: {{ a.due_at }}{% endif %}
+            </span>
+          </header>
+
+          <p class="ann-body">{{ a.body }}</p>
+
+          {% if a.attachments %}
+          <div class="ann-attachments">
+            {% for f in a.attachments %}
+            <a href="{{ f.url }}" target="_blank" class="ann-attachment-link">{{ f.name }}</a>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          <details class="ann-discussion" data-ann-id="{{ a.id }}">
+            <summary>Discussion</summary>
+            <div class="ann-comments" data-role="comments"></div>
+            <form class="ann-comment-form">
+              <input type="text" name="text" placeholder="Reply to students..." required>
+              <button type="submit">Send</button>
+            </form>
+          </details>
+        </article>
+        {% endfor %}
+      {% else %}
+        <p class="ann-empty">No announcements yet for this course.</p>
+      {% endif %}
+    </section>
+  </div>
+</div>
+
+<script>
+(() => {
+  const page = document.querySelector('.teacher-ann-page');
+  if (!page) return;
+
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, m => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'
+    }[m]));
+  }
+
+  function loadComments(card) {
+    const annId = card.dataset.annId;
+    const container = card.querySelector('.ann-comments');
+    fetch(`/announcements/${encodeURIComponent(annId)}/comments`)
+      .then(r => r.ok ? r.json() : [])
+      .then(list => {
+        container.innerHTML = '';
+        if (!list.length) {
+          container.innerHTML = '<p class="ann-no-comments">No comments yet.</p>';
+          return;
+        }
+        list.forEach(c => {
+          const div = document.createElement('div');
+          div.className = 'ann-comment';
+          div.innerHTML = `<span class="who">${escapeHtml(c.author_role)}:</span>
+                           <span class="text">${escapeHtml(c.text)}</span>`;
+          container.appendChild(div);
+        });
+      }).catch(console.error);
+  }
+
+  page.querySelectorAll('.ann-discussion').forEach(det => {
+    det.addEventListener('toggle', () => {
+      if (det.open) {
+        const card = det.closest('.ann-card');
+        loadComments(card);
+      }
+    });
+    const form = det.querySelector('.ann-comment-form');
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const card = det.closest('.ann-card');
+      const annId = card.dataset.annId;
+      const input = form.querySelector('input[name="text"]');
+      const text = input.value.trim();
+      if (!text) return;
+      fetch(`/announcements/${encodeURIComponent(annId)}/comments`, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({text})
+      }).then(r => r.json()).then(res => {
+        if (res.status === 'ok') {
+          input.value = '';
+          loadComments(card);
+        }
+      }).catch(console.error);
+    });
+  });
+})();
+</script>
+{% endblock %}
