@@ -29,12 +29,12 @@
       <button class="inside-btn" id="insideMenuToggle">&#9776;</button>
 
       <a href="{{ url_for('admin_dashboard') }}"><i class="fa-solid fa-house"></i> Home</a>
-      <a href="#"><i class="fa-solid fa-inbox"></i> Inbox</a>
-      <a href="#"><i class="fa-solid fa-book"></i> Teacher Courses List</a>
-      <a href="#"><i class="fa-solid fa-building-columns"></i> Student Dept. List</a>
-      <a href="#"><i class="fa-solid fa-book-open-reader"></i> Student Courses List</a>
+      <a href="{{ url_for('inbox_A') }}"><i class="fa-solid fa-inbox"></i> Inbox</a>
+      <a href="{{ url_for('admin_teacher_courses') }}"><i class="fa-solid fa-book"></i> Teacher Courses List</a>
+      <a href="{{ url_for('admin_student_departments') }}"><i class="fa-solid fa-building-columns"></i> Student Dept. List</a>
+      <a href="{{ url_for('admin_student_courses') }}"><i class="fa-solid fa-book-open-reader"></i> Student Courses List</a>
       <a href="#"><i class="fa-solid fa-bullhorn"></i> Announcements</a>
-      <a href="{{ url_for('admin_feedback_view') }}"><i class="fa-solid fa-comments"></i> Feedback</a>
+      <a href="{{ url_for('admin_feedback_view') }}"><i class="fa-solid fa-list-check"></i>Feedback</a>
     </div>
 
     <main>
