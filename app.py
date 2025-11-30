@@ -155,6 +155,80 @@ def logout():
     return redirect(url_for('home'))
 
 
+# ---------- CHANGE PASSWORD ----------
+@app.route('/change_password', methods=['GET', 'POST'])
+def change_password():
+    # Require logged-in user
+    if 'user' not in session:
+        return redirect(url_for('home'))
+
+    # GET: render the change password page
+    if request.method == 'GET':
+        return render_template('change_p.html')
+
+    # POST: handle AJAX actions (verify_old, set_new)
+    data = request.get_json(silent=True) or {}
+    action = data.get('action')
+
+    user = session.get('user')
+    user_type = session.get('user_type')
+
+    # Only students and admins have editable passwords in this app
+    if user_type == 'student':
+        table = 'students'
+        id_col = 'Roll_No'
+        pass_col = 'password'
+    elif user_type == 'admin':
+        table = 'admins'
+        id_col = 'admin_id'
+        pass_col = 'password'
+    else:
+        return jsonify({'status': 'error', 'message': 'Password change not supported for this account type.'})
+
+    conn = get_db()
+    cur = conn.cursor()
+    # fetch current password
+    try:
+        cur.execute(f"SELECT {pass_col} FROM {table} WHERE {id_col} = ?", (user,))
+        row = cur.fetchone()
+    except Exception as e:
+        conn.close()
+        return jsonify({'status': 'error', 'message': 'Database error.'})
+
+    if not row:
+        conn.close()
+        return jsonify({'status': 'error', 'message': 'User not found.'})
+
+    current_pass = row[0]
+
+    if action == 'verify_old':
+        old = data.get('old_password', '')
+        conn.close()
+        if old == current_pass:
+            return jsonify({'status': 'ok'})
+        else:
+            return jsonify({'status': 'error', 'message': 'Incorrect current password.'})
+
+    if action == 'set_new':
+        new = data.get('new_password', '')
+        if not new or len(new) < 4:
+            conn.close()
+            return jsonify({'status': 'error', 'message': 'New password must be at least 4 characters.'})
+
+        try:
+            cur.execute(f"UPDATE {table} SET {pass_col} = ? WHERE {id_col} = ?", (new, user))
+            conn.commit()
+        except Exception as e:
+            conn.close()
+            return jsonify({'status': 'error', 'message': 'Failed to update password.'})
+
+        conn.close()
+        return jsonify({'status': 'ok'})
+
+    conn.close()
+    return jsonify({'status': 'error', 'message': 'Invalid action.'})
+
+
 # ---------- STUDENT HOME -----------
 @app.route('/student_home')
 def student_home():

@@ -33,7 +33,7 @@
         <span>Welcome, {{ session.get('user_name', 'Student') }}</span>
         <button class="options-btn" id="optionsToggle">&#8942;</button>
         <div class="dropdown" id="optionsMenu">
-          <a href="#"><i class="fa-solid fa-pen-to-square"></i> Change Password</a>
+          <a href="{{ url_for('change_password') }}"><i class="fa-solid fa-pen-to-square"></i> Change Password</a>
           <a href="{{ url_for('logout') }}"><i class="fa-solid fa-power-off"></i> Logout</a>
         </div>
       </div>
