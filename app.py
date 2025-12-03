@@ -2688,7 +2688,6 @@ def student_fee():
 # ---------- FILE UPLOAD HELPER (local, not Firebase) ----------
 
 UPLOAD_ROOT = os.path.join(os.path.dirname(__file__), "static", "uploads")
-os.makedirs(UPLOAD_ROOT, exist_ok=True)
 
 def save_uploaded_file(file_storage, subfolder="announcements"):
     """Save an uploaded file under static/uploads and return metadata dict."""
