@@ -4,3 +4,5 @@ Werkzeug==3.0.2
 itsdangerous==2.2.0
 click==8.1.7
 pandas==2.2.3
+flask-socketio ==5.3.4
+python-socketio==5.8.0
