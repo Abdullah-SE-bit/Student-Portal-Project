@@ -1066,7 +1066,7 @@ def teacher_timetable():
                 'students': student_count
             })
 
-            
+
         
         # Calculate statistics
         total_classes = len(schedule_rows)
@@ -1217,7 +1217,7 @@ def semester_to_course_digit(semester):
 
 
 # -------------------- COURSE REGISTRATION --------------------
-@app.route('/course_registration')
+@app.route('/Course_Registration')
 def course_registration():
     """
     Display course registration page with intelligent course offering:
