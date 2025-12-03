@@ -1065,6 +1065,8 @@ def teacher_timetable():
                 'credits': row['Credit_Hr'],
                 'students': student_count
             })
+
+            
         
         # Calculate statistics
         total_classes = len(schedule_rows)
